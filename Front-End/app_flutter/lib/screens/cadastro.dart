@@ -26,12 +26,65 @@ class _CadastroPageState extends State<CadastroPage> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: const [
-              Text('Cadastro'),
-            ],
+            children: [_cabecalho()],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _cabecalho() {
+    return Column(
+      children: [
+        Container(
+          width: 88,
+          height: 88,
+          decoration: BoxDecoration(
+            color: corVerde,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x332E7D32),
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: const Text('🌱', style: TextStyle(fontSize: 44)),
+        ),
+        const SizedBox(height: 12),
+        const Text.rich(
+          TextSpan(
+            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800),
+            children: [
+              TextSpan(
+                text: 'CULT',
+                style: TextStyle(color: corVerde),
+              ),
+              TextSpan(
+                text: '+',
+                style: TextStyle(color: corLaranja),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Crie sua conta',
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w700,
+            color: corTexto,
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Conecte excedentes a quem procura.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 15, color: corCinza),
+        ),
+      ],
     );
   }
 }
