@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-// Cores da identidade visual do CULT+
 const corVerde = Color(0xFF2E7D32);
 const corVerdeClaro = Color(0xFFE6F1E3);
 const corLaranja = Color(0xFFEF6C00);
@@ -17,6 +16,16 @@ class CadastroPage extends StatefulWidget {
 }
 
 class _CadastroPageState extends State<CadastroPage> {
+  final _nomeController = TextEditingController();
+  final _emailController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nomeController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,7 +35,18 @@ class _CadastroPageState extends State<CadastroPage> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [_cabecalho()],
+            children: [
+              _cabecalho(),
+              const SizedBox(height: 24),
+              _rotulo('Nome completo'),
+              _campo(controller: _nomeController, dica: 'Seu nome'),
+              _rotulo('E-mail'),
+              _campo(
+                controller: _emailController,
+                dica: 'voce@email.com',
+                teclado: TextInputType.emailAddress,
+              ),
+            ],
           ),
         ),
       ),
@@ -85,6 +105,45 @@ class _CadastroPageState extends State<CadastroPage> {
           style: TextStyle(fontSize: 15, color: corCinza),
         ),
       ],
+    );
+  }
+
+  Widget _rotulo(String texto) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 8),
+      child: Text(
+        texto,
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: corTexto),
+      ),
+    );
+  }
+
+  Widget _campo({
+    required TextEditingController controller,
+    required String dica,
+    TextInputType teclado = TextInputType.text,
+  }) {
+    final borda = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: corBorda),
+    );
+
+    return TextFormField(
+      controller: controller,
+      keyboardType: teclado,
+      style: const TextStyle(fontSize: 16, color: corTexto),
+      decoration: InputDecoration(
+        hintText: dica,
+        hintStyle: const TextStyle(color: corCinza),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+        border: borda,
+        enabledBorder: borda,
+        focusedBorder: borda.copyWith(
+          borderSide: const BorderSide(color: corVerde, width: 2),
+        ),
+      ),
     );
   }
 }
