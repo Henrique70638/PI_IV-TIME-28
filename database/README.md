@@ -15,11 +15,11 @@ Banco de dados do CULT+, plataforma que conecta pessoas com excedentes de produt
 | `firestore/firestore.rules` | Regras de segurança |
 | `firestore/firestore.indexes.json` | Índices compostos |
 | `firebase.json` | Configuração do Firebase CLI e do emulador |
-| `scripts/` | Esquema, dados de exemplo, validação, carga (seed) e métricas |
+| `scripts/` | Esquema, dados de exemplo, validação, carga (seed), métricas e testes das regras |
 
 ## Como executar (Windows, PowerShell)
 
-Pré-requisitos: Node.js 18 ou superior, Java instalado (exigido pelo emulador) e o Firebase CLI (`npm install -g firebase-tools`).
+Pré-requisitos: Node.js 18 ou superior, Java 21 ou superior (exigido pelo emulador) e o Firebase CLI (`npm install -g firebase-tools`).
 
 1. Instalar as dependências e rodar os testes locais:
 
@@ -32,7 +32,7 @@ Pré-requisitos: Node.js 18 ou superior, Java instalado (exigido pelo emulador) 
 2. Em outro terminal, iniciar o emulador do Firestore (a partir da pasta `database`):
 
    ```
-   firebase emulators:start --only firestore
+   firebase emulators:start --only firestore --project cult-mais-dev
    ```
 
    O painel do emulador abre em http://localhost:4000.
@@ -44,7 +44,13 @@ Pré-requisitos: Node.js 18 ou superior, Java instalado (exigido pelo emulador) 
    npm run metricas
    ```
 
-4. Regerar o dicionário de dados depois de alterar `scripts/schema.js`:
+4. Testar as regras de segurança (com o emulador ligado). Os testes apagam os dados do emulador; rode `npm run seed` depois para recarregá-los:
+
+   ```
+   node --test regras.test.js
+   ```
+
+5. Regerar o dicionário de dados depois de alterar `scripts/schema.js`:
 
    ```
    npm run dicionario
@@ -65,16 +71,14 @@ firebase deploy --only firestore:rules,firestore:indexes
 Verificado:
 
 - Cálculo de geohash e de distância, contra valores de referência (`npm test`).
-- Dados de exemplo contra o esquema: tipos, campos obrigatórios, valores permitidos, referências entre coleções e coerência das cópias desnormalizadas (`npm test`). O validador foi testado com dados propositalmente inválidos.
-- Sintaxe dos arquivos JSON e dos scripts.
+- Dados de exemplo contra o esquema: tipos, campos obrigatórios, valores permitidos, referências entre coleções e coerência das cópias desnormalizadas (`npm test`).
+- Carga dos dados (`npm run seed`, 25 documentos) e cálculo das métricas (`npm run metricas`) no emulador do Firestore.
+- Regras de segurança: 35 testes automatizados no emulador (`node --test regras.test.js`), cobrindo leitura e escrita de usuários, ofertas, matches e mensagens, e o bloqueio de coleções não previstas.
 
-Ainda não verificado (depende do emulador ou de um projeto Firebase):
+Ainda não verificado:
 
-- Execução das regras de segurança (`firestore.rules`).
-- Execução do `seed.js` e do `metricas.js` contra um Firestore.
-- Consultas do documento `docs/05-consultas-mvp.md`.
-
-Recomenda-se rodar o passo a passo acima e testar as regras no painel do emulador antes de integrar ao aplicativo.
+- Publicação das regras e dos índices em um projeto Firebase real (`firebase deploy`).
+- Consultas do documento `docs/05-consultas-mvp.md` em um aplicativo. Os índices compostos só são exigidos pelo Firestore de produção, então a busca por proximidade deve ser testada lá.
 
 ## Dados de exemplo
 
