@@ -1,0 +1,58 @@
+// Autor: Henrique Leite de Camargo
+// RA: 25005997
+// Data: 03/11/2026
+
+digraph DER {
+  graph [rankdir=LR, splines=true, nodesep=0.9, ranksep=1.4, pad=0.4, fontname="Poppins", bgcolor="white",
+         label=<<font point-size="20"><b>CULT+ — Modelo conceitual (DER)</b></font><br/><font point-size="12" color="#6C7568">Entidades do MVP em verde · funcionalidades futuras tracejadas em cinza</font>>, labelloc=t];
+  node [shape=plain, fontname="Poppins", fontsize=12];
+  edge [fontname="Poppins", fontsize=11, color="#6C7568", fontcolor="#20281F", arrowhead=none, labeldistance=2.2, labelfontsize=13, labelfontcolor="#EF6C00"];
+
+  Usuario [label=<
+    <table border="0" cellborder="1" cellspacing="0" cellpadding="6" color="#2E7D32">
+      <tr><td bgcolor="#2E7D32"><font color="white"><b>USUÁRIO</b></font></td></tr>
+      <tr><td align="left" bgcolor="#E5F3E6"><b><u>uid</u></b></td></tr>
+      <tr><td align="left">nome<br align="left"/>perfil (ofertante | interessado | ambos)<br align="left"/>bairro, cidade<br align="left"/>localização (coordenadas, privada)<br align="left"/>criadoEm<br align="left"/></td></tr>
+    </table>>];
+
+  Excedente [label=<
+    <table border="0" cellborder="1" cellspacing="0" cellpadding="6" color="#2E7D32">
+      <tr><td bgcolor="#2E7D32"><font color="white"><b>EXCEDENTE</b></font></td></tr>
+      <tr><td align="left" bgcolor="#E5F3E6"><b><u>excedenteId</u></b></td></tr>
+      <tr><td align="left">produto, descrição<br align="left"/>categoria<br align="left"/>quantidade, unidade<br align="left"/>urgência<br align="left"/>modalidade (venda | doação)<br align="left"/>localização aproximada<br align="left"/>fotos<br align="left"/>status<br align="left"/>criadoEm, atualizadoEm<br align="left"/></td></tr>
+    </table>>];
+
+  Match [label=<
+    <table border="0" cellborder="1" cellspacing="0" cellpadding="6" color="#EF6C00">
+      <tr><td bgcolor="#EF6C00"><font color="white"><b>MATCH (conexão)</b></font></td></tr>
+      <tr><td align="left" bgcolor="#FFEEDD"><b><u>excedenteId + interessadoId</u></b></td></tr>
+      <tr><td align="left">status (conectado | concluído | cancelado)<br align="left"/>critérios: localização, categoria,<br align="left"/>distância (km)<br align="left"/>criadoEm, concluídoEm<br align="left"/></td></tr>
+    </table>>];
+
+  Mensagem [label=<
+    <table border="0" cellborder="1" cellspacing="0" cellpadding="6" color="#2E7D32">
+      <tr><td bgcolor="#2E7D32"><font color="white"><b>MENSAGEM</b></font></td></tr>
+      <tr><td align="left" bgcolor="#E5F3E6"><b><u>mensagemId</u></b></td></tr>
+      <tr><td align="left">texto<br align="left"/>criadoEm<br align="left"/></td></tr>
+    </table>>];
+
+  Avaliacao [label=<
+    <table border="0" cellborder="1" cellspacing="0" cellpadding="6" color="#9AA394" style="dashed">
+      <tr><td bgcolor="#E4E6DF"><font color="#6C7568"><b>AVALIAÇÃO (futuro)</b></font></td></tr>
+      <tr><td align="left"><font color="#6C7568">nota (1 a 5)<br align="left"/>comentário<br align="left"/>criadoEm<br align="left"/></font></td></tr>
+    </table>>];
+
+  Notificacao [label=<
+    <table border="0" cellborder="1" cellspacing="0" cellpadding="6" color="#9AA394" style="dashed">
+      <tr><td bgcolor="#E4E6DF"><font color="#6C7568"><b>NOTIFICAÇÃO (futuro)</b></font></td></tr>
+      <tr><td align="left"><font color="#6C7568">tipo, título, corpo<br align="left"/>lida<br align="left"/>criadoEm<br align="left"/></font></td></tr>
+    </table>>];
+
+  Usuario -> Excedente [label="publica\n(como ofertante)", taillabel="1", headlabel="N"];
+  Usuario -> Match [label="manifesta interesse\n(como interessado)", taillabel="1", headlabel="N"];
+  Excedente -> Match [label="origina", taillabel="1", headlabel="N"];
+  Match -> Mensagem [label="possui", taillabel="1", headlabel="N"];
+  Usuario -> Mensagem [label="escreve", taillabel="1", headlabel="N", style=dotted];
+  Match -> Avaliacao [label="gera", taillabel="1", headlabel="N", style=dashed, color="#9AA394", fontcolor="#6C7568"];
+  Usuario -> Notificacao [label="recebe", taillabel="1", headlabel="N", style=dashed, color="#9AA394", fontcolor="#6C7568"];
+}
