@@ -17,5 +17,11 @@
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",
     "firebase": "^12.19.0"
+  },
+  "author": "Henrique Leite de Camargo - RA 25005997",
+  "autoria": {
+    "nome": "Henrique Leite de Camargo",
+    "ra": "25005997",
+    "data": "03/11/2026"
   }
 }
