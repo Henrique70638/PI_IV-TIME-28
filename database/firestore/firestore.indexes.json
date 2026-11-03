@@ -1,0 +1,38 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "excedentes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "categoria", "order": "ASCENDING" },
+        { "fieldPath": "localizacao.geohash", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "excedentes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "localizacao.geohash", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "excedentes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "ofertanteId", "order": "ASCENDING" },
+        { "fieldPath": "criadoEm", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "matches",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "participantes", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "atualizadoEm", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
