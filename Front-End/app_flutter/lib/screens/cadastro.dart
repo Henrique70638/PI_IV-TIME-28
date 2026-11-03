@@ -18,11 +18,17 @@ class CadastroPage extends StatefulWidget {
 class _CadastroPageState extends State<CadastroPage> {
   final _nomeController = TextEditingController();
   final _emailController = TextEditingController();
+  final _senhaController = TextEditingController();
+  final _localController = TextEditingController();
+
+  bool _senhaOculta = true;
 
   @override
   void dispose() {
     _nomeController.dispose();
     _emailController.dispose();
+    _senhaController.dispose();
+    _localController.dispose();
     super.dispose();
   }
 
@@ -45,6 +51,30 @@ class _CadastroPageState extends State<CadastroPage> {
                 controller: _emailController,
                 dica: 'voce@email.com',
                 teclado: TextInputType.emailAddress,
+              ),
+              _rotulo('Senha'),
+              _campo(
+                controller: _senhaController,
+                dica: '••••••••',
+                oculto: _senhaOculta,
+                sufixo: IconButton(
+                  icon: Icon(
+                    _senhaOculta
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    color: corCinza,
+                  ),
+                  onPressed: () => setState(() => _senhaOculta = !_senhaOculta),
+                ),
+              ),
+              _rotulo('Localização'),
+              _campo(
+                controller: _localController,
+                dica: 'Bairro ou cidade',
+                prefixo: const Padding(
+                  padding: EdgeInsets.only(left: 16, right: 8),
+                  child: Text('📍', style: TextStyle(fontSize: 18)),
+                ),
               ),
             ],
           ),
@@ -113,7 +143,11 @@ class _CadastroPageState extends State<CadastroPage> {
       padding: const EdgeInsets.only(top: 16, bottom: 8),
       child: Text(
         texto,
-        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: corTexto),
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          color: corTexto,
+        ),
       ),
     );
   }
@@ -122,6 +156,9 @@ class _CadastroPageState extends State<CadastroPage> {
     required TextEditingController controller,
     required String dica,
     TextInputType teclado = TextInputType.text,
+    bool oculto = false,
+    Widget? prefixo,
+    Widget? sufixo,
   }) {
     final borda = OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
@@ -131,13 +168,20 @@ class _CadastroPageState extends State<CadastroPage> {
     return TextFormField(
       controller: controller,
       keyboardType: teclado,
+      obscureText: oculto,
       style: const TextStyle(fontSize: 16, color: corTexto),
       decoration: InputDecoration(
         hintText: dica,
         hintStyle: const TextStyle(color: corCinza),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 20,
+        ),
+        prefixIcon: prefixo,
+        prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+        suffixIcon: sufixo,
         border: borda,
         enabledBorder: borda,
         focusedBorder: borda.copyWith(
