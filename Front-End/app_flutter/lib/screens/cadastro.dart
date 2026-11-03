@@ -1,14 +1,23 @@
+//Autora: Laura Lugli Fonseca Pereira RA:25000739
 import 'package:flutter/material.dart';
+
+// precisa importar o login pra conseguir mandar o usuário pra lá pelo link "Entrar"
 import 'login.dart';
 
+// cores da identidade visual do CULT+
+// 0xFF diz que a cor é 100% opaca
 const corVerde = Color(0xFF2E7D32);
+//fundo do cartão de perfil quando ele tá selecionado
 const corVerdeClaro = Color(0xFFE6F1E3);
 const corLaranja = Color(0xFFEF6C00);
+//bege do fundo da tela
 const corFundo = Color(0xFFF7F6F1);
 const corTexto = Color(0xFF1F2A1F);
+//usado nas dicas dos campos e nos textos secundários
 const corCinza = Color(0xFF8A8F87);
 const corBorda = Color(0xFFE6E6E0);
 
+//os três jeitos que a pessoa pode usar o app
 enum TipoPerfil { ofertante, interessado, ambos }
 
 class CadastroPage extends StatefulWidget {
@@ -24,12 +33,16 @@ class _CadastroPageState extends State<CadastroPage> {
   final _senhaController = TextEditingController();
   final _localController = TextEditingController();
 
+  //começa com a senha escondida
   bool _senhaOculta = true;
 
+  //perfil marcado, começa em interessado
   TipoPerfil _perfil = TipoPerfil.interessado;
 
+  //usada para validar todos os campos de uma vez
   final _formKey = GlobalKey<FormState>();
 
+  //libera os controllers quando a tela fecha
   @override
   void dispose() {
     _nomeController.dispose();
@@ -40,8 +53,10 @@ class _CadastroPageState extends State<CadastroPage> {
   }
 
   void _criarConta() {
+    //se algum campo der erro para aqui
     if (!_formKey.currentState!.validate()) return;
 
+    //depois aqui entra o cadastro no banco
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Conta criada!')));
@@ -51,7 +66,9 @@ class _CadastroPageState extends State<CadastroPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: corFundo,
+      //evita que o conteúdo fique embaixo da câmera e do relógio
       body: SafeArea(
+        //deixa rolar a tela quando o teclado abre
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Form(
@@ -62,6 +79,7 @@ class _CadastroPageState extends State<CadastroPage> {
                 _cabecalho(),
                 const SizedBox(height: 24),
                 _rotulo('Nome completo'),
+                //trim tira os espaços para nao aceitar nome só com espaço
                 _campo(
                   controller: _nomeController,
                   dica: 'Seu nome',
@@ -123,6 +141,7 @@ class _CadastroPageState extends State<CadastroPage> {
     );
   }
 
+  //logo, nome do app, título e subtítulo
   Widget _cabecalho() {
     return Column(
       children: [
@@ -178,6 +197,7 @@ class _CadastroPageState extends State<CadastroPage> {
     );
   }
 
+  //texto em negrito em cima de cada campo
   Widget _rotulo(String texto) {
     return Padding(
       padding: const EdgeInsets.only(top: 16, bottom: 8),
@@ -192,6 +212,7 @@ class _CadastroPageState extends State<CadastroPage> {
     );
   }
 
+  //campo usado em todos os inputs, cada um passa só o que muda
   Widget _campo({
     required TextEditingController controller,
     required String dica,
@@ -222,10 +243,12 @@ class _CadastroPageState extends State<CadastroPage> {
           vertical: 20,
         ),
         prefixIcon: prefixo,
+        //tira o espaço extra que o Flutter deixa antes do ícone
         prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
         suffixIcon: sufixo,
         border: borda,
         enabledBorder: borda,
+        //borda verde quando o campo tá selecionado
         focusedBorder: borda.copyWith(
           borderSide: const BorderSide(color: corVerde, width: 2),
         ),
@@ -233,6 +256,7 @@ class _CadastroPageState extends State<CadastroPage> {
     );
   }
 
+  //os três cartões lado a lado com a mesma altura
   Widget _seletorPerfil() {
     return IntrinsicHeight(
       child: Row(
@@ -277,8 +301,10 @@ class _CadastroPageState extends State<CadastroPage> {
   ) {
     final selecionado = _perfil == tipo;
 
+    //ao tocar troca o perfil escolhido 
     return GestureDetector(
       onTap: () => setState(() => _perfil = tipo),
+      //stack pra colocar a bolinha do check encima do cartão
       child: Stack(
         fit: StackFit.expand,
         clipBehavior: Clip.none,
@@ -317,6 +343,7 @@ class _CadastroPageState extends State<CadastroPage> {
             ),
           ),
 
+          //bolinha do check só no cartão escolhido
           if (selecionado)
             Positioned(
               top: -8,
@@ -368,6 +395,7 @@ class _CadastroPageState extends State<CadastroPage> {
           style: TextStyle(fontSize: 15, color: corCinza),
         ),
         GestureDetector(
+          //troca o cadastro pelo login pra não voltar pro cadastro depois
           onTap: () => Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const LoginPage()),
