@@ -1,5 +1,6 @@
 //autor: Emilly Morelatto
 import 'package:flutter/material.dart';
+import 'cadastro.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -50,10 +51,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void criarConta() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navegação para cadastro ainda não implementada.'),
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CadastroPage()),
     );
   }
 
