@@ -1,3 +1,9 @@
+/*
+ * Autor: Henrique Leite de Camargo
+ * RA: 25005997
+ * Data: 03/11/2026
+ */
+
 const { db, Timestamp, GeoPoint, destino } = require('./conexao');
 const { colecoes } = require('./schema');
 const dados = require('./dados-exemplo');

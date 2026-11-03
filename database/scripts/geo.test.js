@@ -1,3 +1,9 @@
+/*
+ * Autor: Henrique Leite de Camargo
+ * RA: 25005997
+ * Data: 03/11/2026
+ */
+
 const assert = require('assert');
 const { geohash, distanciaKm } = require('./geo');
 

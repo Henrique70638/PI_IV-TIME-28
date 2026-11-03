@@ -1,3 +1,9 @@
+/*
+ * Autor: Henrique Leite de Camargo
+ * RA: 25005997
+ * Data: 03/11/2026
+ */
+
 const CATEGORIAS = ['frutas', 'verduras', 'legumes', 'mudas'];
 const UNIDADES = ['kg', 'un', 'maco', 'cacho', 'muda'];
 const URGENCIAS = ['hoje', 'alguns_dias', 'sem_pressa'];

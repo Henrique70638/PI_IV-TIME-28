@@ -1,3 +1,9 @@
+/*
+ * Autor: Henrique Leite de Camargo
+ * RA: 25005997
+ * Data: 03/11/2026
+ */
+
 const fs = require('fs');
 const path = require('path');
 const { describe, it, before, after, beforeEach } = require('node:test');

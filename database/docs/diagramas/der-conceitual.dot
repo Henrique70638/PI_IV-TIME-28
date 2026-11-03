@@ -1,3 +1,7 @@
+// Autor: Henrique Leite de Camargo
+// RA: 25005997
+// Data: 03/11/2026
+
 digraph DER {
   graph [rankdir=LR, splines=true, nodesep=0.9, ranksep=1.4, pad=0.4, fontname="Poppins", bgcolor="white",
          label=<<font point-size="20"><b>CULT+ — Modelo conceitual (DER)</b></font><br/><font point-size="12" color="#6C7568">Entidades do MVP em verde · funcionalidades futuras tracejadas em cinza</font>>, labelloc=t];

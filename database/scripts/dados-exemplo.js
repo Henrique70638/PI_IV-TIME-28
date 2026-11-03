@@ -1,3 +1,9 @@
+/*
+ * Autor: Henrique Leite de Camargo
+ * RA: 25005997
+ * Data: 03/11/2026
+ */
+
 const { geohash, distanciaKm } = require('./geo');
 
 const arredonda = (n, casas) => Number(n.toFixed(casas));

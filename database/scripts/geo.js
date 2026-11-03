@@ -1,3 +1,9 @@
+/*
+ * Autor: Henrique Leite de Camargo
+ * RA: 25005997
+ * Data: 03/11/2026
+ */
+
 const BASE32 = '0123456789bcdefghjkmnpqrstuvwxyz';
 
 function geohash(lat, lng, precisao = 10) {
