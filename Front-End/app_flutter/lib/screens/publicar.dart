@@ -8,6 +8,8 @@ const corTexto = Color(0xFF1F2A1F);
 const corCinza = Color(0xFF8A8F87);
 const corBorda = Color(0xFFE6E6E0);
 
+enum Categoria { frutas, verduras, legumes, mudas }
+
 class PublicarPage extends StatefulWidget {
   const PublicarPage({super.key});
 
@@ -17,6 +19,16 @@ class PublicarPage extends StatefulWidget {
 
 class _PublicarPageState extends State<PublicarPage> {
   final List<String> _fotos = ['🥭'];
+
+  final _produtoController = TextEditingController(text: 'Manga Tommy');
+
+  Categoria _categoria = Categoria.frutas;
+
+  @override
+  void dispose() {
+    _produtoController.dispose();
+    super.dispose();
+  }
 
   void _mostrarMensagem(String texto) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
@@ -35,7 +47,14 @@ class _PublicarPageState extends State<PublicarPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [_rotulo('Fotos'), _fotosProduto()],
+                  children: [
+                    _rotulo('Fotos'),
+                    _fotosProduto(),
+                    _rotulo('Produto'),
+                    _campoProduto(),
+                    _rotulo('Categoria'),
+                    _seletorCategoria(),
+                  ],
                 ),
               ),
             ),
@@ -176,6 +195,71 @@ class _PublicarPageState extends State<PublicarPage> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+
+  Widget _campoProduto() {
+    final borda = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: corBorda),
+    );
+
+    return TextField(
+      controller: _produtoController,
+      style: const TextStyle(fontSize: 16, color: corTexto),
+      decoration: InputDecoration(
+        hintText: 'Ex: Manga, alface, cenoura',
+        hintStyle: const TextStyle(color: corCinza),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 20,
+        ),
+        enabledBorder: borda,
+        focusedBorder: borda.copyWith(
+          borderSide: const BorderSide(color: corVerde, width: 2),
+        ),
+      ),
+    );
+  }
+
+  Widget _seletorCategoria() {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        _chipCategoria(Categoria.frutas, '🍎 Frutas'),
+        _chipCategoria(Categoria.verduras, '🥬 Verduras'),
+        _chipCategoria(Categoria.legumes, '🥕 Legumes'),
+        _chipCategoria(Categoria.mudas, '🌱 Mudas'),
+      ],
+    );
+  }
+
+  Widget _chipCategoria(Categoria categoria, String texto) {
+    final selecionado = _categoria == categoria;
+
+    return GestureDetector(
+      onTap: () => setState(() => _categoria = categoria),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: selecionado ? corVerde : Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: selecionado ? corVerde : corBorda),
+        ),
+        child: Text(
+          texto,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: selecionado ? Colors.white : corCinza,
           ),
         ),
       ),
