@@ -8,6 +8,8 @@ const corTexto = Color(0xFF1F2A1F);
 const corCinza = Color(0xFF8A8F87);
 const corBorda = Color(0xFFE6E6E0);
 
+enum TipoPerfil { ofertante, interessado, ambos }
+
 class CadastroPage extends StatefulWidget {
   const CadastroPage({super.key});
 
@@ -22,6 +24,8 @@ class _CadastroPageState extends State<CadastroPage> {
   final _localController = TextEditingController();
 
   bool _senhaOculta = true;
+
+  TipoPerfil _perfil = TipoPerfil.interessado;
 
   @override
   void dispose() {
@@ -76,6 +80,8 @@ class _CadastroPageState extends State<CadastroPage> {
                   child: Text('📍', style: TextStyle(fontSize: 18)),
                 ),
               ),
+              _rotulo('Quero usar o CULT+ como'),
+              _seletorPerfil(),
             ],
           ),
         ),
@@ -187,6 +193,110 @@ class _CadastroPageState extends State<CadastroPage> {
         focusedBorder: borda.copyWith(
           borderSide: const BorderSide(color: corVerde, width: 2),
         ),
+      ),
+    );
+  }
+
+  Widget _seletorPerfil() {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _cartaoPerfil(
+              TipoPerfil.ofertante,
+              '🧑‍🌾',
+              'Ofertante',
+              'Tenho excedentes',
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _cartaoPerfil(
+              TipoPerfil.interessado,
+              '🛒',
+              'Interessado',
+              'Procuro produtos',
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _cartaoPerfil(
+              TipoPerfil.ambos,
+              '🤝',
+              'Ambos',
+              'Os dois perfis',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cartaoPerfil(
+    TipoPerfil tipo,
+    String emoji,
+    String titulo,
+    String descricao,
+  ) {
+    final selecionado = _perfil == tipo;
+
+    return GestureDetector(
+      onTap: () => setState(() => _perfil = tipo),
+      child: Stack(
+        fit: StackFit.expand,
+        clipBehavior: Clip.none,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 6),
+            decoration: BoxDecoration(
+              color: selecionado ? corVerdeClaro : Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: selecionado ? corVerde : corBorda,
+                width: selecionado ? 2 : 1,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(emoji, style: const TextStyle(fontSize: 28)),
+                const SizedBox(height: 6),
+                Text(
+                  titulo,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: corTexto,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  descricao,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12.5, color: corCinza),
+                ),
+              ],
+            ),
+          ),
+          
+          if (selecionado)
+            Positioned(
+              top: -8,
+              right: -6,
+              child: Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: corVerde,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: corFundo, width: 2),
+                ),
+                child: const Icon(Icons.check, size: 15, color: Colors.white),
+              ),
+            ),
+        ],
       ),
     );
   }
