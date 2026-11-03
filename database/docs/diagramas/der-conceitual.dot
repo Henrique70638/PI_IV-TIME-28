@@ -1,3 +1,7 @@
+// Autor: Henrique Leite de Camargo
+// RA: 25005997
+// Data: 03/11/2026
+
 digraph DER {
   graph [rankdir=LR, splines=true, nodesep=0.9, ranksep=1.4, pad=0.4, fontname="Poppins", bgcolor="white",
          label=<<font point-size="20"><b>CULT+ — Modelo conceitual (DER)</b></font><br/><font point-size="12" color="#6C7568">Entidades do MVP em verde · funcionalidades futuras tracejadas em cinza</font>>, labelloc=t];
@@ -7,8 +11,8 @@ digraph DER {
   Usuario [label=<
     <table border="0" cellborder="1" cellspacing="0" cellpadding="6" color="#2E7D32">
       <tr><td bgcolor="#2E7D32"><font color="white"><b>USUÁRIO</b></font></td></tr>
-      <tr><td align="left" bgcolor="#E5F3E6"><b><u>uid</u></b></td></tr>
-      <tr><td align="left">nome<br align="left"/>perfil (ofertante | interessado | ambos)<br align="left"/>bairro, cidade<br align="left"/>localização (coordenadas, privada)<br align="left"/>criadoEm<br align="left"/></td></tr>
+      <tr><td align="left" bgcolor="#E5F3E6"><b><u>usuarioId</u></b></td></tr>
+      <tr><td align="left">nome<br align="left"/>e-mail, senha (hash)<br align="left"/>perfil (ofertante | interessado | ambos)<br align="left"/>bairro, cidade<br align="left"/>localização (coordenadas, privada)<br align="left"/>criadoEm<br align="left"/></td></tr>
     </table>>];
 
   Excedente [label=<
