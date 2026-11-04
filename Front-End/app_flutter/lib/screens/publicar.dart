@@ -1,15 +1,23 @@
+//Autora: Laura Lugli Fonseca Pereira RA: 25000739
 import 'package:flutter/material.dart';
 
+// cores da identidade visual
+// 0xFF diz que a cor é 100% opaca
 const corVerde = Color(0xFF2E7D32);
+//fundo do botão de adicionar foto
 const corVerdeClaro = Color(0xFFE6F1E3);
 const corLaranja = Color(0xFFEF6C00);
+//bege do fundo da tela
 const corFundo = Color(0xFFF7F6F1);
 const corTexto = Color(0xFF1F2A1F);
+//usado nas dicas dos campos e nos textos secundários
 const corCinza = Color(0xFF8A8F87);
 const corBorda = Color(0xFFE6E6E0);
 
+//tipos de produto que dá pra publicar
 enum Categoria { frutas, verduras, legumes, mudas }
 
+//se o excedente vai ser doado ou vendido
 enum Modalidade { doacao, venda }
 
 class PublicarPage extends StatefulWidget {
@@ -20,22 +28,31 @@ class PublicarPage extends StatefulWidget {
 }
 
 class _PublicarPageState extends State<PublicarPage> {
+  //por enquanto as fotos são emojis, depois troca pelas imagens de verdade
   final List<String> _fotos = ['🥭'];
 
+  //guarda o nome do produto, já começa preenchido
   final _produtoController = TextEditingController(text: 'Manga Tommy');
 
+  //categoria marcada, começa em frutas
   Categoria _categoria = Categoria.frutas;
 
   final _quantidadeController = TextEditingController(text: '5');
 
+  //opções das listinhas de unidade e urgência
   final List<String> _unidades = ['kg', 'un', 'cx'];
   final List<String> _urgencias = ['Hoje', 'Alguns dias', 'Esta semana'];
+
+  //opção escolhida em cada listinha
   String _unidade = 'kg';
   String _urgencia = 'Alguns dias';
 
+  //modalidade marcada, começa em doação
   Modalidade _modalidade = Modalidade.doacao;
+  //depois vem do perfil do usuário
   String _local = 'Jardim das Flores';
 
+  //libera os controllers quando a tela fecha
   @override
   void dispose() {
     _produtoController.dispose();
@@ -43,15 +60,18 @@ class _PublicarPageState extends State<PublicarPage> {
     super.dispose();
   }
 
+  //mostra uma mensagem embaixo da tela
   void _mostrarMensagem(String texto) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
   }
 
   void _publicar() {
+    //troca a vírgula por ponto pra aceitar 2,5 e tenta transformar em número
     final quantidade = double.tryParse(
       _quantidadeController.text.replaceAll(',', '.'),
     );
 
+    //cada if confere uma coisa, se der erro mostra a mensagem e para aqui
     if (_fotos.isEmpty) {
       _mostrarMensagem('Adicione pelo menos uma foto.');
       return;
@@ -60,11 +80,14 @@ class _PublicarPageState extends State<PublicarPage> {
       _mostrarMensagem('Digite o nome do produto.');
       return;
     }
+
+    //null é quando o texto não é um número
     if (quantidade == null || quantidade <= 0) {
       _mostrarMensagem('Informe uma quantidade válida.');
       return;
     }
 
+    //depois aqui entra o envio pro banco
     _mostrarMensagem('Excedente publicado!');
   }
 
@@ -72,10 +95,12 @@ class _PublicarPageState extends State<PublicarPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: corFundo,
+      //evita que o conteúdo fique embaixo da câmera e do relógio
       body: SafeArea(
         child: Column(
           children: [
             _topo(),
+            //só o meio rola, o topo e o botão ficam fixos
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -108,6 +133,7 @@ class _PublicarPageState extends State<PublicarPage> {
               ),
             ),
 
+            //botão fora do scroll pra ficar sempre visível embaixo
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
               child: _botaoPublicar(),
@@ -118,12 +144,14 @@ class _PublicarPageState extends State<PublicarPage> {
     );
   }
 
+  //botão de voltar e título da tela
   Widget _topo() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
       child: Row(
         children: [
           GestureDetector(
+            //volta pra tela anterior se tiver alguma
             onTap: () => Navigator.maybePop(context),
             child: Container(
               width: 48,
@@ -153,12 +181,14 @@ class _PublicarPageState extends State<PublicarPage> {
               ),
             ),
           ),
+          //espaço do mesmo tamanho do botão pra deixar o título bem no meio
           const SizedBox(width: 48),
         ],
       ),
     );
   }
 
+  //texto em negrito em cima de cada parte
   Widget _rotulo(String texto) {
     return Padding(
       padding: const EdgeInsets.only(top: 18, bottom: 10),
@@ -173,11 +203,14 @@ class _PublicarPageState extends State<PublicarPage> {
     );
   }
 
+  //fotos já adicionadas e o botão de adicionar no final
+  //wrap joga pra linha de baixo quando não cabe
   Widget _fotosProduto() {
     return Wrap(
       spacing: 14,
       runSpacing: 14,
       children: [
+        //cria um quadradinho pra cada foto da lista
         for (int i = 0; i < _fotos.length; i++) _foto(i),
         _botaoAdicionarFoto(),
       ],
@@ -185,6 +218,7 @@ class _PublicarPageState extends State<PublicarPage> {
   }
 
   Widget _foto(int indice) {
+    //stack pra colocar o X em cima da foto
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -193,6 +227,7 @@ class _PublicarPageState extends State<PublicarPage> {
           height: 100,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
+            //degradê de amarelo pra laranja
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -202,6 +237,7 @@ class _PublicarPageState extends State<PublicarPage> {
           alignment: Alignment.center,
           child: Text(_fotos[indice], style: const TextStyle(fontSize: 52)),
         ),
+        //botão de remover a foto, os valores negativos puxam ele pra fora do canto
         Positioned(
           top: -8,
           right: -8,
@@ -226,6 +262,7 @@ class _PublicarPageState extends State<PublicarPage> {
   Widget _botaoAdicionarFoto() {
     return GestureDetector(
       onTap: () => _mostrarMensagem('Seleção de fotos ainda não implementada.'),
+      //CustomPaint desenha a borda tracejada, o Flutter não tem pronta
       child: CustomPaint(
         painter: _BordaTracejada(),
         child: Container(
@@ -274,6 +311,7 @@ class _PublicarPageState extends State<PublicarPage> {
           vertical: 20,
         ),
         enabledBorder: borda,
+        //borda verde quando o campo tá selecionado
         focusedBorder: borda.copyWith(
           borderSide: const BorderSide(color: corVerde, width: 2),
         ),
@@ -281,6 +319,7 @@ class _PublicarPageState extends State<PublicarPage> {
     );
   }
 
+  //chips de categoria, o wrap joga pra linha de baixo os que não cabem
   Widget _seletorCategoria() {
     return Wrap(
       spacing: 10,
@@ -297,12 +336,14 @@ class _PublicarPageState extends State<PublicarPage> {
   Widget _chipCategoria(Categoria categoria, String texto) {
     final selecionado = _categoria == categoria;
 
+    //ao tocar troca a categoria escolhida
     return GestureDetector(
       onTap: () => setState(() => _categoria = categoria),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
+          //selecionado fica verde, os outros ficam brancos
           color: selecionado ? corVerde : Colors.white,
           borderRadius: BorderRadius.circular(30),
           border: Border.all(color: selecionado ? corVerde : corBorda),
@@ -319,6 +360,7 @@ class _PublicarPageState extends State<PublicarPage> {
     );
   }
 
+  //caixa branca com borda que se repete em vários campos
   BoxDecoration _decoracaoCaixa() {
     return BoxDecoration(
       color: Colors.white,
@@ -327,6 +369,7 @@ class _PublicarPageState extends State<PublicarPage> {
     );
   }
 
+  //quantidade e urgência lado a lado, cada uma com metade da largura
   Widget _quantidadeEUrgencia() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -348,6 +391,7 @@ class _PublicarPageState extends State<PublicarPage> {
     );
   }
 
+  //número digitado e a unidade escolhida dentro da mesma caixa
   Widget _campoQuantidade() {
     return Container(
       height: 60,
@@ -358,10 +402,12 @@ class _PublicarPageState extends State<PublicarPage> {
           Expanded(
             child: TextField(
               controller: _quantidadeController,
+              //abre o teclado de números com vírgula
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
               style: const TextStyle(fontSize: 16, color: corTexto),
+              //sem borda porque quem faz a borda é a caixa de fora
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 hintText: '0',
@@ -371,6 +417,7 @@ class _PublicarPageState extends State<PublicarPage> {
           ),
           DropdownButton<String>(
             value: _unidade,
+            //tira a linha que o dropdown tem embaixo
             underline: const SizedBox(),
             borderRadius: BorderRadius.circular(16),
             dropdownColor: Colors.white,
@@ -380,6 +427,7 @@ class _PublicarPageState extends State<PublicarPage> {
               size: 18,
             ),
             style: const TextStyle(fontSize: 16, color: corCinza),
+            //transforma cada texto da lista numa opção do dropdown
             items: _unidades
                 .map((u) => DropdownMenuItem(value: u, child: Text(u)))
                 .toList(),
@@ -397,6 +445,7 @@ class _PublicarPageState extends State<PublicarPage> {
       decoration: _decoracaoCaixa(),
       child: DropdownButton<String>(
         value: _urgencia,
+        //ocupa a caixa inteira e joga a setinha pro canto
         isExpanded: true,
         underline: const SizedBox(),
         borderRadius: BorderRadius.circular(16),
@@ -420,6 +469,7 @@ class _PublicarPageState extends State<PublicarPage> {
         children: [
           const Text('📍', style: TextStyle(fontSize: 18)),
           const SizedBox(width: 8),
+          //ocupa o meio e empurra o Alterar pro canto direito
           Expanded(
             child: Text(
               _local,
@@ -444,6 +494,7 @@ class _PublicarPageState extends State<PublicarPage> {
     );
   }
 
+  //caixa branca com as duas opções dentro, a escolhida fica verde
   Widget _seletorModalidade() {
     return Container(
       padding: const EdgeInsets.all(6),
@@ -464,6 +515,8 @@ class _PublicarPageState extends State<PublicarPage> {
   Widget _opcaoModalidade(Modalidade modalidade, String texto) {
     final selecionado = _modalidade == modalidade;
 
+    //ao tocar troca a modalidade escolhida
+
     return GestureDetector(
       onTap: () => setState(() => _modalidade = modalidade),
       child: AnimatedContainer(
@@ -471,8 +524,10 @@ class _PublicarPageState extends State<PublicarPage> {
         height: 52,
         alignment: Alignment.center,
         decoration: BoxDecoration(
+          //a que não tá escolhida fica transparente e some no fundo branco
           color: selecionado ? corVerde : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
+          //sombra só na opção escolhida
           boxShadow: selecionado
               ? const [
                   BoxShadow(
@@ -495,9 +550,11 @@ class _PublicarPageState extends State<PublicarPage> {
     );
   }
 
+  //botão laranja que chama a função _publicar lá de cima
   Widget _botaoPublicar() {
     return SizedBox(
       height: 58,
+      //ocupa toda a largura disponível
       width: double.infinity,
       child: ElevatedButton(
         onPressed: _publicar,
@@ -519,14 +576,17 @@ class _PublicarPageState extends State<PublicarPage> {
   }
 }
 
+//desenha a borda tracejada verde do botão de adicionar foto
 class _BordaTracejada extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
+    //pincel verde que só faz o contorno
     final pincel = Paint()
       ..color = corVerde
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
+    //caminho com o formato do botão, um retângulo de cantos arredondados
     final caminho = Path()
       ..addRRect(
         RRect.fromRectAndRadius(
@@ -535,6 +595,7 @@ class _BordaTracejada extends CustomPainter {
         ),
       );
 
+    //vai andando pela borda e desenhando um tracinho de 6 com espaço de 5
     for (final medida in caminho.computeMetrics()) {
       double distancia = 0;
       while (distancia < medida.length) {
@@ -544,6 +605,7 @@ class _BordaTracejada extends CustomPainter {
     }
   }
 
+  //a borda nunca muda, então não precisa redesenhar
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
