@@ -1,8 +1,17 @@
-import 'dotenv/config';
 import { app } from './app';
+import { env } from './shared/env';
+import { conectarBanco } from './shared/banco';
 
-const porta = Number(process.env.PORTA ?? 3333);
+async function iniciar() {
+  try {
+    await conectarBanco();
+  } catch {
+    console.warn('Aviso: não conectou no MongoDB, as rotas que usam o banco vão falhar');
+  }
 
-app.listen(porta, () => {
-  console.log(`API do CULT+ rodando em http://localhost:${porta}`);
-});
+  app.listen(env.porta, () => {
+    console.log(`API do CULT+ rodando em http://localhost:${env.porta}`);
+  });
+}
+
+iniciar();
