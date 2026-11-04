@@ -1,21 +1,16 @@
 {
   "name": "cultmais-banco-de-dados",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Scripts do banco de dados (Firestore) do CULT+ — PI IV, Time 28",
+  "description": "Modelagem e scripts do banco de dados MongoDB do CULT+ — PI IV, Time 28",
+  "author": "Henrique Leite de Camargo - RA 25005997",
+  "autoria": {
+    "nome": "Henrique Leite de Camargo",
+    "ra": "25005997",
+    "data": "03/11/2026"
+  },
   "scripts": {
-    "test": "node geo.test.js && node validar-dados.js",
-    "dicionario": "node gerar-dicionario.js",
-    "seed": "node seed.js",
-    "seed:real": "node seed.js --real",
-    "metricas": "node metricas.js",
-    "metricas:real": "node metricas.js --real"
-  },
-  "dependencies": {
-    "firebase-admin": "^12.0.0"
-  },
-  "devDependencies": {
-    "@firebase/rules-unit-testing": "^5.0.2",
-    "firebase": "^12.19.0"
+    "test": "node geo.test.js && node validar-dados.js && node testar-mongo.js",
+    "gerar": "node gerar-mongo.js && node gerar-dicionario.js"
   }
 }
