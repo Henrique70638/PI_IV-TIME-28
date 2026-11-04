@@ -10,6 +10,8 @@ const corBorda = Color(0xFFE6E6E0);
 
 enum Categoria { frutas, verduras, legumes, mudas }
 
+enum Modalidade { doacao, venda }
+
 class PublicarPage extends StatefulWidget {
   const PublicarPage({super.key});
 
@@ -30,6 +32,9 @@ class _PublicarPageState extends State<PublicarPage> {
   final List<String> _urgencias = ['Hoje', 'Alguns dias', 'Esta semana'];
   String _unidade = 'kg';
   String _urgencia = 'Alguns dias';
+
+  Modalidade _modalidade = Modalidade.doacao;
+  String _local = 'Jardim das Flores';
 
   @override
   void dispose() {
@@ -72,6 +77,11 @@ class _PublicarPageState extends State<PublicarPage> {
                         color: corCinza,
                       ),
                     ),
+                    _rotulo('Localização'),
+                    _caixaLocalizacao(),
+                    _rotulo('Modalidade'),
+                    _seletorModalidade(),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -371,6 +381,90 @@ class _PublicarPageState extends State<PublicarPage> {
             .map((u) => DropdownMenuItem(value: u, child: Text(u)))
             .toList(),
         onChanged: (valor) => setState(() => _urgencia = valor!),
+      ),
+    );
+  }
+
+  Widget _caixaLocalizacao() {
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: _decoracaoCaixa(),
+      child: Row(
+        children: [
+          const Text('📍', style: TextStyle(fontSize: 18)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _local,
+              style: const TextStyle(fontSize: 16, color: corTexto),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => _mostrarMensagem(
+              'Troca de localização ainda não implementada.',
+            ),
+            child: const Text(
+              'Alterar',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: corVerde,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _seletorModalidade() {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: corBorda),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: _opcaoModalidade(Modalidade.doacao, '🎁 Doação')),
+          Expanded(child: _opcaoModalidade(Modalidade.venda, '💰 Venda')),
+        ],
+      ),
+    );
+  }
+
+  Widget _opcaoModalidade(Modalidade modalidade, String texto) {
+    final selecionado = _modalidade == modalidade;
+
+    return GestureDetector(
+      onTap: () => setState(() => _modalidade = modalidade),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 52,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selecionado ? corVerde : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: selecionado
+              ? const [
+                  BoxShadow(
+                    color: Color(0x332E7D32),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          texto,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: selecionado ? Colors.white : corCinza,
+          ),
+        ),
       ),
     );
   }
