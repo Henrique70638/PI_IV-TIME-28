@@ -101,7 +101,6 @@ class InicioPage extends StatefulWidget {
 class _InicioPageState extends State<InicioPage> {
   static const Color verde = Color(0xFF267536);
   static const Color verdeEscuro = Color(0xFF206D31);
-  static const Color laranja = Color(0xFFF47700);
   static const Color cinza = Color(0xFF929A91);
   static const Color fundo = Color(0xFFF7F8F2);
   static const Color textoEscuro = Color(0xFF20251F);
