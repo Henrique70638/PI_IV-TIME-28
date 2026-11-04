@@ -24,9 +24,17 @@ class _PublicarPageState extends State<PublicarPage> {
 
   Categoria _categoria = Categoria.frutas;
 
+  final _quantidadeController = TextEditingController(text: '5');
+
+  final List<String> _unidades = ['kg', 'un', 'cx'];
+  final List<String> _urgencias = ['Hoje', 'Alguns dias', 'Esta semana'];
+  String _unidade = 'kg';
+  String _urgencia = 'Alguns dias';
+
   @override
   void dispose() {
     _produtoController.dispose();
+    _quantidadeController.dispose();
     super.dispose();
   }
 
@@ -54,6 +62,16 @@ class _PublicarPageState extends State<PublicarPage> {
                     _campoProduto(),
                     _rotulo('Categoria'),
                     _seletorCategoria(),
+                    _quantidadeEUrgencia(),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Urgência não é usada no match desta versão (MVP).',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontStyle: FontStyle.italic,
+                        color: corCinza,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -201,7 +219,6 @@ class _PublicarPageState extends State<PublicarPage> {
     );
   }
 
-
   Widget _campoProduto() {
     final borda = OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
@@ -262,6 +279,98 @@ class _PublicarPageState extends State<PublicarPage> {
             color: selecionado ? Colors.white : corCinza,
           ),
         ),
+      ),
+    );
+  }
+
+  BoxDecoration _decoracaoCaixa() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: corBorda),
+    );
+  }
+
+  Widget _quantidadeEUrgencia() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [_rotulo('Quantidade'), _campoQuantidade()],
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [_rotulo('Urgência'), _listaUrgencia()],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _campoQuantidade() {
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.only(left: 18, right: 8),
+      decoration: _decoracaoCaixa(),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _quantidadeController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              style: const TextStyle(fontSize: 16, color: corTexto),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                hintText: '0',
+                hintStyle: TextStyle(color: corCinza),
+              ),
+            ),
+          ),
+          DropdownButton<String>(
+            value: _unidade,
+            underline: const SizedBox(),
+            borderRadius: BorderRadius.circular(16),
+            dropdownColor: Colors.white,
+            icon: const Icon(
+              Icons.keyboard_arrow_down,
+              color: corCinza,
+              size: 18,
+            ),
+            style: const TextStyle(fontSize: 16, color: corCinza),
+            items: _unidades
+                .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                .toList(),
+            onChanged: (valor) => setState(() => _unidade = valor!),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _listaUrgencia() {
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: _decoracaoCaixa(),
+      child: DropdownButton<String>(
+        value: _urgencia,
+        isExpanded: true,
+        underline: const SizedBox(),
+        borderRadius: BorderRadius.circular(16),
+        dropdownColor: Colors.white,
+        icon: const Icon(Icons.keyboard_arrow_down, color: corCinza, size: 18),
+        style: const TextStyle(fontSize: 16, color: corTexto),
+        items: _urgencias
+            .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+            .toList(),
+        onChanged: (valor) => setState(() => _urgencia = valor!),
       ),
     );
   }
