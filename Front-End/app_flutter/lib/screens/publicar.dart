@@ -47,6 +47,27 @@ class _PublicarPageState extends State<PublicarPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
   }
 
+  void _publicar() {
+    final quantidade = double.tryParse(
+      _quantidadeController.text.replaceAll(',', '.'),
+    );
+
+    if (_fotos.isEmpty) {
+      _mostrarMensagem('Adicione pelo menos uma foto.');
+      return;
+    }
+    if (_produtoController.text.trim().isEmpty) {
+      _mostrarMensagem('Digite o nome do produto.');
+      return;
+    }
+    if (quantidade == null || quantidade <= 0) {
+      _mostrarMensagem('Informe uma quantidade válida.');
+      return;
+    }
+
+    _mostrarMensagem('Excedente publicado!');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,6 +106,11 @@ class _PublicarPageState extends State<PublicarPage> {
                   ],
                 ),
               ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+              child: _botaoPublicar(),
             ),
           ],
         ),
@@ -464,6 +490,29 @@ class _PublicarPageState extends State<PublicarPage> {
             fontWeight: FontWeight.w700,
             color: selecionado ? Colors.white : corCinza,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _botaoPublicar() {
+    return SizedBox(
+      height: 58,
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _publicar,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: corLaranja,
+          foregroundColor: Colors.white,
+          elevation: 6,
+          shadowColor: const Color(0x66EF6C00),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+        child: const Text(
+          'Publicar excedente',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
       ),
     );
