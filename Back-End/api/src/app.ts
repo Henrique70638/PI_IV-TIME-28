@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { tratarErros } from './shared/erros';
 
 export const app = express();
 
@@ -9,3 +10,5 @@ app.use(express.json());
 app.get('/saude', (_req, res) => {
   res.json({ ok: true });
 });
+
+app.use(tratarErros);
