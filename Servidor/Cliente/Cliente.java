@@ -1,4 +1,3 @@
-package Back-End.scr.Cliente;
 
 import java.net.*;
 import java.io.*;

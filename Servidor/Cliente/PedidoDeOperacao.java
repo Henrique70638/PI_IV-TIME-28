@@ -1,4 +1,3 @@
-package Back-End.scr.Cliente;
 
 public class PedidoDeOperacao extends Comunicado
 {
