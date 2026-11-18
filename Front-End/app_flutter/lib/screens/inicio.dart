@@ -3,6 +3,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../services/busca_excedentes_api.dart';
+import 'conversas.dart';
+import 'perfil.dart';
+import 'publicar.dart';
 
 enum TipoOferta { doacao, venda }
 
@@ -893,11 +896,32 @@ class _InicioPageState extends State<InicioPage> {
   }
 
   void _tocarNavegacao(VoidCallback? callback, String nome) {
+    // Mantém a navegação fornecida pelo aplicativo, quando disponível.
     if (callback != null) {
       callback();
-    } else {
-      _mensagem('A navegação para $nome será conectada às telas do grupo.');
+      return;
     }
+
+    // Navegação padrão para as telas que já existem no projeto.
+    // O perfil demonstrativo não representa um usuário autenticado.
+    final Widget? pagina = switch (nome) {
+      'Publicar' => const PublicarPage(),
+      'Conversas' => const ConversasPage(),
+      'Perfil' => const PerfilPage(
+          usuario: UsuarioPerfil(
+            nome: 'Usuário de demonstração',
+            email: 'Sem autenticação',
+            tipoUsuario: 'Interessado',
+            localizacao: 'Jardim das Flores',
+          ),
+        ),
+      _ => null,
+    };
+
+    if (pagina == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => pagina),
+    );
   }
 
   Widget _itemNavegacao({
