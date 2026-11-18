@@ -70,6 +70,8 @@ class _PublicarPageState extends State<PublicarPage> {
   final String _cidade = 'Campinas';
   final double _latitude = -22.90;
   final double _longitude = -47.06;
+  //fica true enquanto espera a api responder
+  bool _enviando = false;
 
   //libera os controllers quando a tela fecha
   @override
@@ -106,6 +108,9 @@ class _PublicarPageState extends State<PublicarPage> {
       return;
     }
 
+    //trava o botão enquanto envia
+    setState(() => _enviando = true);
+
     //manda pra api, os nomes são os mesmos que o backend espera
     final erro = await ExcedenteService.publicar({
       'ofertanteId': _ofertanteId,
@@ -124,6 +129,8 @@ class _PublicarPageState extends State<PublicarPage> {
 
     //a tela pode ter sido fechada enquanto esperava
     if (!mounted) return;
+
+    setState(() => _enviando = false);
 
     //se voltou mensagem é porque deu erro
     if (erro != null) {
@@ -606,7 +613,8 @@ class _PublicarPageState extends State<PublicarPage> {
       //ocupa toda a largura disponível
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: _publicar,
+        //desliga o botão enquanto envia pra não publicar duas vezes
+        onPressed: _enviando ? null : _publicar,
         style: ElevatedButton.styleFrom(
           backgroundColor: corLaranja,
           foregroundColor: Colors.white,
@@ -615,11 +623,22 @@ class _PublicarPageState extends State<PublicarPage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
+          disabledBackgroundColor: corLaranja,
         ),
-        child: const Text(
-          'Publicar excedente',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-        ),
+        //mostra uma rodinha girando enquanto espera a api
+        child: _enviando
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 3,
+                ),
+              )
+            : const Text(
+                'Publicar excedente',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
       ),
     );
   }
