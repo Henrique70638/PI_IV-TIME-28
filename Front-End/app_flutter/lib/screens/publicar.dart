@@ -1,5 +1,6 @@
 //Autora: Laura Lugli Fonseca Pereira RA: 25000739
 import 'package:flutter/material.dart';
+import '../services/excedente_service.dart';
 
 // cores da identidade visual
 // 0xFF diz que a cor é 100% opaca
@@ -83,7 +84,7 @@ class _PublicarPageState extends State<PublicarPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
   }
 
-  void _publicar() {
+  Future<void> _publicar() async {
     //troca a vírgula por ponto pra aceitar 2,5 e tenta transformar em número
     final quantidade = double.tryParse(
       _quantidadeController.text.replaceAll(',', '.'),
@@ -105,8 +106,35 @@ class _PublicarPageState extends State<PublicarPage> {
       return;
     }
 
-    //depois aqui entra o envio pro banco
+    //manda pra api, os nomes são os mesmos que o backend espera
+    final erro = await ExcedenteService.publicar({
+      'ofertanteId': _ofertanteId,
+      'ofertanteNome': _ofertanteNome,
+      'produto': _produtoController.text.trim(),
+      'categoria': _categoria.name,
+      'quantidade': quantidade,
+      'unidade': _unidade,
+      'urgencia': _urgencia,
+      'modalidade': _modalidade.name,
+      'bairro': _local,
+      'cidade': _cidade,
+      'latitude': _latitude,
+      'longitude': _longitude,
+    });
+
+    //a tela pode ter sido fechada enquanto esperava
+    if (!mounted) return;
+
+    //se voltou mensagem é porque deu erro
+    if (erro != null) {
+      _mostrarMensagem(erro);
+      return;
+    }
+
     _mostrarMensagem('Excedente publicado!');
+
+    //fecha a tela e volta pra anterior (true avisa que publicou)
+    Navigator.maybePop(context, true);
   }
 
   @override
