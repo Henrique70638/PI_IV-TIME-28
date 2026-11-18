@@ -1,4 +1,5 @@
-package Back-End.scr.Cliente;
+package auth.Cliente;
+
 
 public class PedidoDeResultado extends Comunicado
 {}

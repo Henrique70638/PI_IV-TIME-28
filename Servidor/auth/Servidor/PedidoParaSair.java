@@ -1,4 +1,4 @@
-package Back-End.scr.Cliente;
+package auth.Servidor;
 
 public class PedidoParaSair extends Comunicado
 {}
