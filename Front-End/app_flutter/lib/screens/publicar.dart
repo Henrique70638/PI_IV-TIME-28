@@ -1,5 +1,6 @@
 //Autora: Laura Lugli Fonseca Pereira RA: 25000739
 import 'package:flutter/material.dart';
+import '../services/excedente_service.dart';
 
 // cores da identidade visual
 // 0xFF diz que a cor é 100% opaca
@@ -39,18 +40,38 @@ class _PublicarPageState extends State<PublicarPage> {
 
   final _quantidadeController = TextEditingController(text: '5');
 
-  //opções das listinhas de unidade e urgência
-  final List<String> _unidades = ['kg', 'un', 'cx'];
-  final List<String> _urgencias = ['Hoje', 'Alguns dias', 'Esta semana'];
+  //a chave é o valor que vai pro banco e o valor é o que aparece na tela
+  final Map<String, String> _unidades = {
+    'kg': 'kg',
+    'un': 'un',
+    'maco': 'maço',
+    'cacho': 'cacho',
+    'muda': 'muda',
+  };
+  final Map<String, String> _urgencias = {
+    'hoje': 'Hoje',
+    'alguns_dias': 'Alguns dias',
+    'sem_pressa': 'Sem pressa',
+  };
 
-  //opção escolhida em cada listinha
+  //opção escolhida em cada listinha, guarda o valor do banco
   String _unidade = 'kg';
-  String _urgencia = 'Alguns dias';
+  String _urgencia = 'alguns_dias';
 
   //modalidade marcada, começa em doação
   Modalidade _modalidade = Modalidade.doacao;
   //depois vem do perfil do usuário
   String _local = 'Jardim das Flores';
+  //até o login ficar pronto, publica com um usuário de teste
+  final String _ofertanteId = '6543a1f2b3c4d5e6f7a8b9c0';
+  final String _ofertanteNome = 'Laura';
+
+  //depois vem da localização do usuário
+  final String _cidade = 'Campinas';
+  final double _latitude = -22.90;
+  final double _longitude = -47.06;
+  //fica true enquanto espera a api responder
+  bool _enviando = false;
 
   //libera os controllers quando a tela fecha
   @override
@@ -65,7 +86,7 @@ class _PublicarPageState extends State<PublicarPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
   }
 
-  void _publicar() {
+  Future<void> _publicar() async {
     //troca a vírgula por ponto pra aceitar 2,5 e tenta transformar em número
     final quantidade = double.tryParse(
       _quantidadeController.text.replaceAll(',', '.'),
@@ -87,8 +108,40 @@ class _PublicarPageState extends State<PublicarPage> {
       return;
     }
 
-    //depois aqui entra o envio pro banco
+    //trava o botão enquanto envia
+    setState(() => _enviando = true);
+
+    //manda pra api, os nomes são os mesmos que o backend espera
+    final erro = await ExcedenteService.publicar({
+      'ofertanteId': _ofertanteId,
+      'ofertanteNome': _ofertanteNome,
+      'produto': _produtoController.text.trim(),
+      'categoria': _categoria.name,
+      'quantidade': quantidade,
+      'unidade': _unidade,
+      'urgencia': _urgencia,
+      'modalidade': _modalidade.name,
+      'bairro': _local,
+      'cidade': _cidade,
+      'latitude': _latitude,
+      'longitude': _longitude,
+    });
+
+    //a tela pode ter sido fechada enquanto esperava
+    if (!mounted) return;
+
+    setState(() => _enviando = false);
+
+    //se voltou mensagem é porque deu erro
+    if (erro != null) {
+      _mostrarMensagem(erro);
+      return;
+    }
+
     _mostrarMensagem('Excedente publicado!');
+
+    //fecha a tela e volta pra anterior (true avisa que publicou)
+    Navigator.maybePop(context, true);
   }
 
   @override
@@ -428,8 +481,11 @@ class _PublicarPageState extends State<PublicarPage> {
             ),
             style: const TextStyle(fontSize: 16, color: corCinza),
             //transforma cada texto da lista numa opção do dropdown
-            items: _unidades
-                .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+            //value é o que vai pro banco e o Text é o que aparece
+            items: _unidades.entries
+                .map(
+                  (u) => DropdownMenuItem(value: u.key, child: Text(u.value)),
+                )
                 .toList(),
             onChanged: (valor) => setState(() => _unidade = valor!),
           ),
@@ -452,8 +508,8 @@ class _PublicarPageState extends State<PublicarPage> {
         dropdownColor: Colors.white,
         icon: const Icon(Icons.keyboard_arrow_down, color: corCinza, size: 18),
         style: const TextStyle(fontSize: 16, color: corTexto),
-        items: _urgencias
-            .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+        items: _urgencias.entries
+            .map((u) => DropdownMenuItem(value: u.key, child: Text(u.value)))
             .toList(),
         onChanged: (valor) => setState(() => _urgencia = valor!),
       ),
@@ -557,7 +613,8 @@ class _PublicarPageState extends State<PublicarPage> {
       //ocupa toda a largura disponível
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: _publicar,
+        //desliga o botão enquanto envia pra não publicar duas vezes
+        onPressed: _enviando ? null : _publicar,
         style: ElevatedButton.styleFrom(
           backgroundColor: corLaranja,
           foregroundColor: Colors.white,
@@ -566,11 +623,22 @@ class _PublicarPageState extends State<PublicarPage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
+          disabledBackgroundColor: corLaranja,
         ),
-        child: const Text(
-          'Publicar excedente',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-        ),
+        //mostra uma rodinha girando enquanto espera a api
+        child: _enviando
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 3,
+                ),
+              )
+            : const Text(
+                'Publicar excedente',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
       ),
     );
   }

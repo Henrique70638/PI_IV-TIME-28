@@ -8,8 +8,9 @@ async function iniciar() {
     //se o banco falhar a api sobe mesmo assim
     try {
         await conectarBanco();
-    } catch {
+    } catch (erro) {
         console.warn('Aviso: não conectou no MongoDB, as rotas que usam o banco vão falhar');
+        console.warn((erro as Error).message);
     }
 
     app.listen(env.porta, () => {
