@@ -39,13 +39,23 @@ class _PublicarPageState extends State<PublicarPage> {
 
   final _quantidadeController = TextEditingController(text: '5');
 
-  //opções das listinhas de unidade e urgência
-  final List<String> _unidades = ['kg', 'un', 'cx'];
-  final List<String> _urgencias = ['Hoje', 'Alguns dias', 'Esta semana'];
+  //a chave é o valor que vai pro banco e o valor é o que aparece na tela
+  final Map<String, String> _unidades = {
+    'kg': 'kg',
+    'un': 'un',
+    'maco': 'maço',
+    'cacho': 'cacho',
+    'muda': 'muda',
+  };
+  final Map<String, String> _urgencias = {
+    'hoje': 'Hoje',
+    'alguns_dias': 'Alguns dias',
+    'sem_pressa': 'Sem pressa',
+  };
 
-  //opção escolhida em cada listinha
+  //opção escolhida em cada listinha, guarda o valor do banco
   String _unidade = 'kg';
-  String _urgencia = 'Alguns dias';
+  String _urgencia = 'alguns_dias';
 
   //modalidade marcada, começa em doação
   Modalidade _modalidade = Modalidade.doacao;
@@ -428,8 +438,11 @@ class _PublicarPageState extends State<PublicarPage> {
             ),
             style: const TextStyle(fontSize: 16, color: corCinza),
             //transforma cada texto da lista numa opção do dropdown
-            items: _unidades
-                .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+            //value é o que vai pro banco e o Text é o que aparece
+            items: _unidades.entries
+                .map(
+                  (u) => DropdownMenuItem(value: u.key, child: Text(u.value)),
+                )
                 .toList(),
             onChanged: (valor) => setState(() => _unidade = valor!),
           ),
@@ -452,8 +465,8 @@ class _PublicarPageState extends State<PublicarPage> {
         dropdownColor: Colors.white,
         icon: const Icon(Icons.keyboard_arrow_down, color: corCinza, size: 18),
         style: const TextStyle(fontSize: 16, color: corTexto),
-        items: _urgencias
-            .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+        items: _urgencias.entries
+            .map((u) => DropdownMenuItem(value: u.key, child: Text(u.value)))
             .toList(),
         onChanged: (valor) => setState(() => _urgencia = valor!),
       ),
