@@ -1,9 +1,16 @@
 // Autor: Rafaela Jacobsen Braga - 25004280
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import '../services/busca_excedentes_api.dart';
+import 'conversas.dart';
+import 'perfil.dart';
+import 'publicar.dart';
 
 enum TipoOferta { doacao, venda }
 
 class ExcedenteCult {
+  final String? id;
   final String nome;
   final String quantidade;
   final double distanciaKm;
@@ -14,6 +21,7 @@ class ExcedenteCult {
   final Color corFinal;
 
   const ExcedenteCult({
+    this.id,
     required this.nome,
     required this.quantidade,
     required this.distanciaKm,
@@ -23,6 +31,59 @@ class ExcedenteCult {
     required this.corInicial,
     required this.corFinal,
   });
+
+  // Converte o JSON retornado pela API, sem modificar os dados de demonstração.
+  factory ExcedenteCult.fromApi(Map<String, dynamic> dados) {
+    final nome = dados['produto'];
+    final quantidade = dados['quantidade'];
+    final distancia = dados['distanciaKm'];
+    final modalidade = dados['modalidade'];
+    final categoria = dados['categoria'];
+    final unidade = dados['unidade'];
+    if (nome is! String || quantidade is! num || distancia is! num ||
+        modalidade is! String || categoria is! String || unidade is! String ||
+        !['doacao', 'venda'].contains(modalidade)) {
+      throw const FormatException('Excedente sem os campos obrigatórios.');
+    }
+
+    final categoriaExibida = switch (categoria) {
+      'frutas' => 'Frutas',
+      'verduras' => 'Verduras',
+      'legumes' => 'Legumes',
+      'mudas' => 'Plantas',
+      _ => 'Outros',
+    };
+    final emoji = switch (categoria) {
+      'frutas' => '🍎',
+      'verduras' => '🥬',
+      'legumes' => '🥕',
+      'mudas' => '🪴',
+      _ => '🌱',
+    };
+    final numero = quantidade.toDouble();
+    final valorQuantidade = numero == numero.truncateToDouble()
+        ? numero.toInt().toString()
+        : numero.toString();
+    final unidadeExibida = switch (unidade) {
+      'maco' => 'maços',
+      'cacho' => 'cachos',
+      'muda' => 'mudas',
+      'un' => 'unidades',
+      _ => unidade,
+    };
+
+    return ExcedenteCult(
+      id: dados['id'] is String ? dados['id'] as String : null,
+      nome: nome,
+      quantidade: '~$valorQuantidade $unidadeExibida',
+      distanciaKm: distancia.toDouble(),
+      categoria: categoriaExibida,
+      emoji: emoji,
+      tipo: modalidade == 'doacao' ? TipoOferta.doacao : TipoOferta.venda,
+      corInicial: const Color(0xFFE6EFD9),
+      corFinal: const Color(0xFFC8DBAA),
+    );
+  }
 }
 
 const List<ExcedenteCult> excedentesExemplo = [
@@ -105,10 +166,22 @@ class _InicioPageState extends State<InicioPage> {
   static const Color fundo = Color(0xFFF7F8F2);
   static const Color textoEscuro = Color(0xFF20251F);
 
+  // A API é opcional: sem coordenadas reais, a tela continua no modo demonstração.
+  static const bool _usarApi = bool.fromEnvironment('CULT_USAR_API');
+  static const String _latitudeConfigurada = String.fromEnvironment('CULT_LATITUDE');
+  static const String _longitudeConfigurada = String.fromEnvironment('CULT_LONGITUDE');
+  static const bool _apiDemonstracao = bool.fromEnvironment('CULT_API_DEMO');
+  final BuscaExcedentesApi _api = BuscaExcedentesApi();
+  List<ExcedenteCult> _excedentesApi = [];
+  bool _carregando = false;
+  String? _erroApi;
+  int _versaoConsulta = 0;
+  Timer? _debounceBusca;
+
   final TextEditingController _buscaController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  String _localizacao = 'Jardim das Flores';
+  String _localizacao = _usarApi ? 'Localização configurada' : 'Jardim das Flores';
   String _categoria = 'Frutas'; // Filtro inicial igual ao da modelagem.
   String _tipo = 'Todos';
   double _raioKm = 5;
@@ -122,7 +195,72 @@ class _InicioPageState extends State<InicioPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    if (_usarApi) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _carregarExcedentes();
+      });
+    }
+  }
+
+  Future<void> _carregarExcedentes() async {
+    if (!_usarApi) return;
+    final versao = ++_versaoConsulta;
+    final latitude = double.tryParse(_latitudeConfigurada);
+    final longitude = double.tryParse(_longitudeConfigurada);
+    if (latitude == null || longitude == null ||
+        latitude < -90 || latitude > 90 ||
+        longitude < -180 || longitude > 180) {
+      setState(() {
+        _carregando = false;
+        _erroApi = 'Configure coordenadas autorizadas para a busca.';
+        _excedentesApi = [];
+      });
+      return;
+    }
+    setState(() {
+      _carregando = true;
+      _erroApi = null;
+    });
+    try {
+      final resultados = await _api.buscar(FiltrosExcedentesApi(
+        latitude: latitude,
+        longitude: longitude,
+        raioKm: _raioKm,
+        categoria: _categoria,
+        modalidade: _tipo,
+        busca: _buscaController.text,
+      ));
+      final produtos = resultados.map(ExcedenteCult.fromApi).toList();
+      if (!mounted || versao != _versaoConsulta) return;
+      setState(() {
+        _excedentesApi = produtos;
+        _carregando = false;
+      });
+    } catch (erro) {
+      if (!mounted || versao != _versaoConsulta) return;
+      setState(() {
+        _erroApi = erro is FormatException
+            ? 'O servidor retornou um produto inválido.'
+            : erro.toString();
+        _excedentesApi = [];
+        _carregando = false;
+      });
+    }
+  }
+
+  void _atualizarBusca() {
+    setState(() {});
+    if (!_usarApi) return;
+    _debounceBusca?.cancel();
+    _debounceBusca = Timer(const Duration(milliseconds: 350), _carregarExcedentes);
+  }
+
+  @override
   void dispose() {
+    _debounceBusca?.cancel();
+    ++_versaoConsulta;
     _buscaController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -132,6 +270,7 @@ class _InicioPageState extends State<InicioPage> {
       valor.toStringAsFixed(1).replaceAll('.', ',');
 
   List<ExcedenteCult> get _filtrados {
+    if (_usarApi) return _excedentesApi;
     final termo = _buscaController.text.trim().toLowerCase();
     return widget.excedentes.where((produto) {
       final correspondeBusca = produto.nome.toLowerCase().contains(termo);
@@ -155,6 +294,10 @@ class _InicioPageState extends State<InicioPage> {
   }
 
   Future<void> _editarLocalizacao() async {
+    if (_usarApi) {
+      _mensagem('A localização da busca está definida nas configurações do teste.');
+      return;
+    }
     String localTemporario = _localizacao;
     final novaLocalizacao = await showDialog<String>(
       context: context,
@@ -296,6 +439,7 @@ class _InicioPageState extends State<InicioPage> {
                           _tipo = tipoTemporario;
                         });
                         Navigator.pop(modalContext);
+                        _carregarExcedentes();
                       },
                       child: const Text(
                         'Aplicar filtros',
@@ -552,7 +696,7 @@ class _InicioPageState extends State<InicioPage> {
                   ),
                   child: TextField(
                     controller: _buscaController,
-                    onChanged: (_) => setState(() {}),
+                    onChanged: (_) => _atualizarBusca(),
                     textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
                       hintText: 'Buscar frutas, verduras...',
@@ -567,7 +711,7 @@ class _InicioPageState extends State<InicioPage> {
                           : IconButton(
                               onPressed: () {
                                 _buscaController.clear();
-                                setState(() {});
+                                _atualizarBusca();
                               },
                               icon: const Icon(Icons.close_rounded, size: 19),
                             ),
@@ -631,7 +775,10 @@ class _InicioPageState extends State<InicioPage> {
               borderRadius: BorderRadius.circular(28),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-            onSelected: (_) => setState(() => _categoria = nome),
+            onSelected: (_) {
+              setState(() => _categoria = nome);
+              _carregarExcedentes();
+            },
           );
         },
       ),
@@ -701,6 +848,7 @@ class _InicioPageState extends State<InicioPage> {
                 _tipo = 'Todos';
                 _raioKm = 10;
               });
+              _carregarExcedentes();
             },
             child: const Text('Limpar filtros', style: TextStyle(color: verde)),
           ),
@@ -709,12 +857,71 @@ class _InicioPageState extends State<InicioPage> {
     );
   }
 
+  Widget _situacaoApi() {
+    if (!_usarApi) {
+      return const Padding(
+        padding: EdgeInsets.fromLTRB(22, 0, 22, 8),
+        child: Text('Produtos de demonstração',
+            style: TextStyle(fontSize: 12, color: cinza)),
+      );
+    }
+    if (_carregando) {
+      return const Padding(
+        padding: EdgeInsets.all(25),
+        child: Center(child: CircularProgressIndicator(color: verde)),
+      );
+    }
+    if (_erroApi != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
+        child: Column(children: [
+          const Icon(Icons.wifi_off_outlined, size: 35, color: cinza),
+          const SizedBox(height: 8),
+          Text(_erroApi!, textAlign: TextAlign.center),
+          TextButton(
+            onPressed: _carregarExcedentes,
+            child: const Text('Tentar novamente'),
+          ),
+        ]),
+      );
+    }
+    if (_apiDemonstracao) {
+      return const Padding(
+        padding: EdgeInsets.fromLTRB(22, 0, 22, 8),
+        child: Text('Resposta de API demonstrativa (sem MongoDB)',
+            style: TextStyle(fontSize: 12, color: cinza)),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
   void _tocarNavegacao(VoidCallback? callback, String nome) {
+    // Mantém a navegação fornecida pelo aplicativo, quando disponível.
     if (callback != null) {
       callback();
-    } else {
-      _mensagem('A navegação para $nome será conectada às telas do grupo.');
+      return;
     }
+
+    // Navegação padrão para as telas que já existem no projeto.
+    // O perfil demonstrativo não representa um usuário autenticado.
+    final Widget? pagina = switch (nome) {
+      'Publicar' => const PublicarPage(),
+      'Conversas' => const ConversasPage(),
+      'Perfil' => const PerfilPage(
+          usuario: UsuarioPerfil(
+            nome: 'Usuário de demonstração',
+            email: 'Sem autenticação',
+            tipoUsuario: 'Interessado',
+            localizacao: 'Jardim das Flores',
+          ),
+        ),
+      _ => null,
+    };
+
+    if (pagina == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => pagina),
+    );
   }
 
   Widget _itemNavegacao({
@@ -825,9 +1032,10 @@ class _InicioPageState extends State<InicioPage> {
             SliverToBoxAdapter(child: _cabecalho()),
             SliverToBoxAdapter(child: _filtrosCategoria()),
             SliverToBoxAdapter(child: _tituloLista()),
-            if (produtos.isEmpty)
+            SliverToBoxAdapter(child: _situacaoApi()),
+            if (!_carregando && _erroApi == null && produtos.isEmpty)
               SliverToBoxAdapter(child: _semResultados())
-            else
+            else if (!_carregando && _erroApi == null)
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(22, 0, 22, 24),
                 sliver: SliverList(
