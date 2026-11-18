@@ -61,6 +61,14 @@ class _PublicarPageState extends State<PublicarPage> {
   Modalidade _modalidade = Modalidade.doacao;
   //depois vem do perfil do usuário
   String _local = 'Jardim das Flores';
+  //até o login ficar pronto, publica com um usuário de teste
+  final String _ofertanteId = '6543a1f2b3c4d5e6f7a8b9c0';
+  final String _ofertanteNome = 'Laura';
+
+  //depois vem da localização do usuário
+  final String _cidade = 'Campinas';
+  final double _latitude = -22.90;
+  final double _longitude = -47.06;
 
   //libera os controllers quando a tela fecha
   @override
