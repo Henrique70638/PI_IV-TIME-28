@@ -1,3 +1,4 @@
+//Autora: Laura Lugli Fonseca Pereira RA: 25000739
 import { Request, Response, NextFunction } from 'express';
 import { ObjectId } from 'mongodb';
 import { ErroApp } from '../../../shared/erros';
@@ -5,14 +6,17 @@ import { CATEGORIAS, UNIDADES, URGENCIAS, MODALIDADES, Excedente } from '../type
 import { inserirExcedente } from '../repositories/excedenteRepository';
 import { textoObrigatorio, valorDaLista, numeroEntre } from './validacoes';
 
+//arredonda a coordenada para uns 100 metros e não mostra o endereço exato
 function arredondar(coordenada: number): number {
   return Math.round(coordenada * 1000) / 1000;
 }
 
+//recebe os dados da tela, valida e salva o excedente
 export async function publicarExcedente(req: Request, res: Response, next: NextFunction) {
   try {
     const dados = req.body;
 
+    //temporário
     if (typeof dados.ofertanteId !== 'string' || !ObjectId.isValid(dados.ofertanteId))
       throw new ErroApp(400, 'Ofertante inválido');
 
@@ -26,6 +30,7 @@ export async function publicarExcedente(req: Request, res: Response, next: NextF
     if (typeof dados.quantidade !== 'number' || dados.quantidade <= 0)
       throw new ErroApp(400, 'A quantidade deve ser maior que zero');
 
+    //descrição é opcional, só valida se veio
     let descricao: string | undefined;
     if (dados.descricao !== undefined && dados.descricao !== '') {
       if (typeof dados.descricao !== 'string' || dados.descricao.length > 500)
@@ -38,6 +43,7 @@ export async function publicarExcedente(req: Request, res: Response, next: NextF
     const latitude = numeroEntre(dados.latitude, 'latitude', -90, 90);
     const longitude = numeroEntre(dados.longitude, 'longitude', -180, 180);
 
+    //fotos também são opcionais, no máximo 3
     let fotos: string[] | undefined;
     if (dados.fotos !== undefined) {
       if (!Array.isArray(dados.fotos) || dados.fotos.length > 3 ||
@@ -48,6 +54,7 @@ export async function publicarExcedente(req: Request, res: Response, next: NextF
 
     const agora = new Date();
 
+    //monta o excedente no formato do banco 
     const excedente: Excedente = {
       ofertante: { _id: new ObjectId(dados.ofertanteId), nome: ofertanteNome },
       produto,
@@ -65,13 +72,15 @@ export async function publicarExcedente(req: Request, res: Response, next: NextF
       criadoEm: agora,
       atualizadoEm: agora,
     };
-
+    
+    //só coloca os opcionais se vieram
     if (descricao) excedente.descricao = descricao;
     if (fotos) excedente.fotos = fotos;
 
     const salvo = await inserirExcedente(excedente);
     res.status(201).json(salvo);
   } catch (erro) {
+    //manda o erro para a central de erros
     next(erro);
   }
 }

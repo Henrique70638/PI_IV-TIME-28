@@ -1,17 +1,21 @@
+// Autora: Laura Lugli Fonseca Pereira RA: 25000739
 import { ObjectId } from 'mongodb';
 
+//valores aceitos pelo banco em cada campo
 export const CATEGORIAS = ['frutas', 'verduras', 'legumes', 'mudas'] as const;
 export const UNIDADES = ['kg', 'un', 'maco', 'cacho', 'muda'] as const;
 export const URGENCIAS = ['hoje', 'alguns_dias', 'sem_pressa'] as const;
 export const MODALIDADES = ['doacao', 'venda'] as const;
 export const STATUS_EXCEDENTE = ['disponivel', 'concluido', 'removido'] as const;
 
+//tipos que so aceitam os valores das listas acima
 export type Categoria = typeof CATEGORIAS[number];
 export type Unidade = typeof UNIDADES[number];
 export type Urgencia = typeof URGENCIAS[number];
 export type Modalidade = typeof MODALIDADES[number];
 export type StatusExcedente = typeof STATUS_EXCEDENTE[number];
 
+//ponto no mapa no formato do mongo
 export interface PontoGeo {
     type: 'Point';
     coordinates: [number, number];
