@@ -1,5 +1,4 @@
-package PI_IV-TIME-28.Servidor.Cliente;
-
+package auth.Servidor;
 
 import java.io.*;
 import java.net.*;

@@ -1,4 +1,4 @@
-package PI_IV-TIME-28.Servidor.Cliente;
+package auth.Cliente;
 
 
 public class ComunicadoDeDesligamento extends Comunicado

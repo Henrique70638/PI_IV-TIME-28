@@ -1,5 +1,4 @@
-package Back-End.scr.Cliente;
-
+package auth.Cliente;
 import java.net.*;
 import java.io.*;
 
