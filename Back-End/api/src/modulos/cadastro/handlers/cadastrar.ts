@@ -6,7 +6,9 @@
 
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
+import { env } from '../../../shared/env';
 import { ErroApp } from '../../../shared/erros';
+import { validarCadastroNoServidor } from '../../../shared/servidorJava';
 import { inserirUsuario } from '../repositories/usuariosRepositorio';
 import { DadosCadastro, Perfil, UsuarioPublico } from '../types/usuario';
 
@@ -18,7 +20,7 @@ function texto(valor: unknown): string {
   return typeof valor === 'string' ? valor.trim() : '';
 }
 
-export function validarCadastro(corpo: Record<string, unknown>): DadosCadastro {
+export function lerCampos(corpo: Record<string, unknown>): DadosCadastro {
   const nome = texto(corpo.nome);
   const email = texto(corpo.email).toLowerCase();
   const senha = typeof corpo.senha === 'string' ? corpo.senha : '';
@@ -28,6 +30,13 @@ export function validarCadastro(corpo: Record<string, unknown>): DadosCadastro {
   const cidade = texto(corpo.cidade) || 'Campinas';
   const latitude = corpo.latitude === undefined ? CAMPINAS.latitude : Number(corpo.latitude);
   const longitude = corpo.longitude === undefined ? CAMPINAS.longitude : Number(corpo.longitude);
+
+  return { nome, email, senha, perfil, bairro, cidade, latitude, longitude };
+}
+
+export function validarCadastro(corpo: Record<string, unknown>): DadosCadastro {
+  const campos = lerCampos(corpo);
+  const { nome, email, senha, perfil, bairro, cidade, latitude, longitude } = campos;
 
   if (!nome || nome.length > 60) throw new ErroApp(400, 'Informe um nome com até 60 caracteres');
   if (!REGEX_EMAIL.test(email)) throw new ErroApp(400, 'E-mail inválido');
@@ -41,7 +50,21 @@ export function validarCadastro(corpo: Record<string, unknown>): DadosCadastro {
 }
 
 export async function cadastrar(req: Request, res: Response) {
-  const dados = validarCadastro(req.body ?? {});
+  const corpo = req.body ?? {};
+
+  if (env.servidorJavaAtivo) {
+    const campos = lerCampos(corpo);
+    const resposta = await validarCadastroNoServidor({
+      nome: campos.nome,
+      email: campos.email,
+      senha: campos.senha,
+      perfil: campos.perfil,
+      bairro: campos.bairro,
+    });
+    if (!resposta.valido) throw new ErroApp(400, resposta.mensagem);
+  }
+
+  const dados = validarCadastro(corpo);
   const senhaHash = await bcrypt.hash(dados.senha, 10);
 
   const usuario = await inserirUsuario({
