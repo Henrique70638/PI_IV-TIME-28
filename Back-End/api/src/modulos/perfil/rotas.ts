@@ -1,7 +1,10 @@
+//Autora: Emilly Morelatto
+
 import { Router } from 'express';
+import { buscarMeuPerfil } from './handlers/perfilHandler';
+import { lerToken } from '../../shared/autenticacao';
 
 export const rotasPerfil = Router();
 
-rotasPerfil.get('/status', (_req, res) => {
-  res.json({ tela: 'perfil', ok: true });
-});
+// Busca os dados do usuario logado
+rotasPerfil.get('/', lerToken, buscarMeuPerfil);
