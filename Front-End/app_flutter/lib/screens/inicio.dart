@@ -1,4 +1,4 @@
-// Autor: Rafaela Jacobsen Braga - 25004280
+// Autor: Rafaela Jacobsen Braga - RA: 25004280
 import 'dart:async';
 
 import 'package:flutter/material.dart';

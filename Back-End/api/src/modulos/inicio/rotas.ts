@@ -9,4 +9,5 @@ rotasInicio.get('/status', (_req, res) => {
 
 // GET /api/inicio/excedentes?latitude=-22.91&longitude=-47.065&raioKm=5&categoria=frutas
 // Autor: Rafaela Jacobsen Braga - RA: 25004280
+// Busca de excedentes: Rafaela Jacobsen Braga - RA: 25004280.
 rotasInicio.get('/excedentes', listarExcedentes);

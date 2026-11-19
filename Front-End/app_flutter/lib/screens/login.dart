@@ -1,4 +1,5 @@
 //autor: Emilly Morelatto
+// Ajuste de responsividade: Rafaela Jacobsen Braga - RA: 25004280
 import 'package:flutter/material.dart';
 import 'cadastro.dart';
 import 'inicio.dart';
@@ -93,25 +94,25 @@ class _LoginPageState extends State<LoginPage> {
         Text(
           titulo,
           style: const TextStyle(
-            fontSize: 17,
+            fontSize: 15,
             fontWeight: FontWeight.bold,
             color: Color(0xFF20251F),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
         SizedBox(
-          height: 76,
+          height: 54,
           child: TextField(
             controller: controller,
             obscureText: senha && !mostrarSenha,
             keyboardType: senha
                 ? TextInputType.visiblePassword
                 : TextInputType.emailAddress,
-            style: const TextStyle(fontSize: 17, color: Color(0xFF252A24)),
+            style: const TextStyle(fontSize: 15, color: Color(0xFF252A24)),
             decoration: InputDecoration(
               hintText: dica,
-              hintStyle: TextStyle(color: cinza, fontSize: 17),
-              prefixIcon: Icon(icone, color: cinza, size: 27),
+              hintStyle: TextStyle(color: cinza, fontSize: 15),
+              prefixIcon: Icon(icone, color: cinza, size: 22),
               suffixIcon: senha
                   ? IconButton(
                       onPressed: () {
@@ -124,25 +125,25 @@ class _LoginPageState extends State<LoginPage> {
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
                         color: cinza,
-                        size: 27,
+                        size: 22,
                       ),
                     )
                   : null,
               filled: true,
               fillColor: Colors.white,
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 24,
+                horizontal: 16,
+                vertical: 13,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(18),
                 borderSide: const BorderSide(
                   color: Color(0xFFDDE3D9),
                   width: 1.5,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(18),
                 borderSide: BorderSide(color: verde, width: 1.8),
               ),
             ),
@@ -163,23 +164,23 @@ class _LoginPageState extends State<LoginPage> {
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 32,
+                    horizontal: 24,
+                    vertical: 12,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 8),
 
                       Center(
                         child: Column(
                           children: [
                             Container(
-                              width: 112,
-                              height: 112,
+                              width: 76,
+                              height: 76,
                               decoration: BoxDecoration(
                                 color: const Color(0xFF19752D),
-                                borderRadius: BorderRadius.circular(30),
+                                borderRadius: BorderRadius.circular(22),
                                 boxShadow: [
                                   BoxShadow(
                                     color: verde.withValues(alpha: 0.15),
@@ -191,10 +192,10 @@ class _LoginPageState extends State<LoginPage> {
                               child: const Icon(
                                 Icons.spa,
                                 color: Color(0xFFB5DB57),
-                                size: 65,
+                                size: 44,
                               ),
                             ),
-                            const SizedBox(height: 22),
+                            const SizedBox(height: 8),
                             RichText(
                               text: const TextSpan(
                                 children: [
@@ -202,7 +203,7 @@ class _LoginPageState extends State<LoginPage> {
                                     text: 'CULT',
                                     style: TextStyle(
                                       color: Color(0xFF206D31),
-                                      fontSize: 43,
+                                      fontSize: 32,
                                       fontWeight: FontWeight.w900,
                                       letterSpacing: -1.5,
                                     ),
@@ -211,7 +212,7 @@ class _LoginPageState extends State<LoginPage> {
                                     text: '+',
                                     style: TextStyle(
                                       color: Color(0xFFF47700),
-                                      fontSize: 43,
+                                      fontSize: 32,
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
@@ -222,32 +223,32 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      const SizedBox(height: 42),
+                      const SizedBox(height: 18),
 
                       const Text(
                         'Entrar na sua conta',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 29,
+                          fontSize: 24,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF191D18),
                           letterSpacing: -0.7,
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 12),
 
                       Text(
                         'Bem-vindo de volta! Faça login para\ncontinuar.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 19,
-                          height: 1.5,
+                          fontSize: 15,
+                          height: 1.25,
                           color: cinza,
                         ),
                       ),
 
-                      const SizedBox(height: 64),
+                      const SizedBox(height: 20),
 
                       campoTexto(
                         titulo: 'E-mail',
@@ -256,7 +257,7 @@ class _LoginPageState extends State<LoginPage> {
                         icone: Icons.mail_outline,
                       ),
 
-                      const SizedBox(height: 38),
+                      const SizedBox(height: 14),
 
                       campoTexto(
                         titulo: 'Senha',
@@ -266,7 +267,7 @@ class _LoginPageState extends State<LoginPage> {
                         senha: true,
                       ),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 8),
 
                       Align(
                         alignment: Alignment.centerRight,
@@ -279,17 +280,17 @@ class _LoginPageState extends State<LoginPage> {
                           child: const Text(
                             'Esqueceu sua senha?',
                             style: TextStyle(
-                              fontSize: 17,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ),
 
-                      const SizedBox(height: 54),
+                      const SizedBox(height: 12),
 
                       SizedBox(
-                        height: 104,
+                        height: 54,
                         child: ElevatedButton(
                           //desliga o botão enquanto envia
                           onPressed: enviando ? null : entrar,
@@ -299,7 +300,7 @@ class _LoginPageState extends State<LoginPage> {
                             elevation: 8,
                             shadowColor: laranja.withValues(alpha: 0.25),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+                              borderRadius: BorderRadius.circular(22),
                             ),
                             disabledBackgroundColor: laranja,
                           ),
@@ -316,14 +317,14 @@ class _LoginPageState extends State<LoginPage> {
                               : const Text(
                                   'Entrar',
                                   style: TextStyle(
-                                    fontSize: 25,
+                                    fontSize: 19,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
                         ),
                       ),
 
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 16),
 
                       Row(
                         children: [
@@ -337,7 +338,7 @@ class _LoginPageState extends State<LoginPage> {
                             padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: Text(
                               'ou',
-                              style: TextStyle(color: cinza, fontSize: 20),
+                              style: TextStyle(color: cinza, fontSize: 15),
                             ),
                           ),
                           Expanded(
@@ -349,42 +350,42 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
 
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 16),
 
                       SizedBox(
-                        height: 92,
+                        height: 54,
                         child: OutlinedButton(
                           onPressed: criarConta,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: verde,
                             side: BorderSide(color: verde, width: 2),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+                              borderRadius: BorderRadius.circular(22),
                             ),
                           ),
                           child: const Text(
                             'Criar uma conta',
                             style: TextStyle(
-                              fontSize: 23,
+                              fontSize: 14,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
                         ),
                       ),
 
-                      const SizedBox(height: 100),
+                      const SizedBox(height: 18),
 
                       Text(
                         'Cultivando melhores escolhas\npara o seu futuro.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: cinza,
-                          fontSize: 19,
-                          height: 1.5,
+                          fontSize: 15,
+                          height: 1.25,
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 8),
                     ],
                   ),
                 ),

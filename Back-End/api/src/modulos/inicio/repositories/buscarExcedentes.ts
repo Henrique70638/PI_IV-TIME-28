@@ -9,6 +9,7 @@ function escaparRegex(texto: string): string {
   return texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// Usa busca geoespacial e retorna somente os dados publicos necessarios ao app.
 export function montarPipelineBusca(filtros: FiltrosBusca): Document[] {
   const query: Document = { status: 'disponivel' };
   if (filtros.categoria) query.categoria = filtros.categoria;

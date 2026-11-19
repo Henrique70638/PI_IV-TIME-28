@@ -46,6 +46,7 @@ function lerNumero(
   return numero;
 }
 
+// Valida os filtros recebidos antes de consultar o banco.
 export function validarFiltrosBusca(entrada: Entrada): FiltrosBusca {
   const latitude = lerNumero(entrada, 'latitude', -90, 90);
   const longitude = lerNumero(entrada, 'longitude', -180, 180);
