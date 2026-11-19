@@ -1,11 +1,11 @@
 //Autora: Emilly Morelatto
 
 import { ObjectId } from 'mongodb';
-import { db } from '../../../shared/bancoDados';
+import { getBanco } from '../../../shared/banco';
 
 // Busca um usuario pelo ID
 export async function buscarUsuarioPorId(id: ObjectId) {
-    const usuario = await db.collection('usuarios').findOne({
+    const usuario = await getBanco().collection('usuarios').findOne({
         _id: id
     });
 
