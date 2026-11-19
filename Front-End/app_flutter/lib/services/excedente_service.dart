@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'api.dart';
 
 //o endereço da api muda dependendo de onde o app roda
 String get enderecoApi {
