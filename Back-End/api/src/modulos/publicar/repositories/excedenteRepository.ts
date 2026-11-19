@@ -3,6 +3,7 @@
 import { ObjectId } from 'mongodb';
 import { getBanco } from '../../../shared/banco';
 import { Excedente } from '../types/excedente';
+import { Usuario } from '../../cadastro/types/usuario';
 
 //pega a coleção de excedentes só na hora de usar
 function colecao() {
@@ -21,4 +22,9 @@ export async function listarExcedentesDoOfertante(ofertanteId: ObjectId): Promis
         .find({ 'ofertante._id': ofertanteId, status: { $ne: 'removido' } })
         .sort({ criadoEm: -1 })
         .toArray();
+}
+
+//busca quem esta publicando pra copiar o nome e a localizacao
+export async function buscarOfertante(id: ObjectId): Promise<Usuario | null> {
+    return getBanco().collection<Usuario>('usuarios').findOne({ _id: id });
 }
