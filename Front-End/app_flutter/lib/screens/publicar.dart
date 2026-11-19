@@ -1,6 +1,7 @@
 //Autora: Laura Lugli Fonseca Pereira RA: 25000739
 import 'package:flutter/material.dart';
 import '../services/excedente_service.dart';
+import '../services/sessao.dart';
 
 // cores da identidade visual
 // 0xFF diz que a cor é 100% opaca
@@ -60,16 +61,10 @@ class _PublicarPageState extends State<PublicarPage> {
 
   //modalidade marcada, começa em doação
   Modalidade _modalidade = Modalidade.doacao;
-  //depois vem do perfil do usuário
-  String _local = 'Jardim das Flores';
-  //até o login ficar pronto, publica com um usuário de teste
-  final String _ofertanteId = '6543a1f2b3c4d5e6f7a8b9c0';
-  final String _ofertanteNome = 'Laura';
 
-  //depois vem da localização do usuário
-  final String _cidade = 'Campinas';
-  final double _latitude = -22.90;
-  final double _longitude = -47.06;
+  //bairro de quem esta logado, vem do cadastro
+  final String _local = Sessao.usuario?['bairro'] ?? '';
+
   //fica true enquanto espera a api responder
   bool _enviando = false;
 
@@ -113,18 +108,12 @@ class _PublicarPageState extends State<PublicarPage> {
 
     //manda pra api, os nomes são os mesmos que o backend espera
     final erro = await ExcedenteService.publicar({
-      'ofertanteId': _ofertanteId,
-      'ofertanteNome': _ofertanteNome,
       'produto': _produtoController.text.trim(),
       'categoria': _categoria.name,
       'quantidade': quantidade,
       'unidade': _unidade,
       'urgencia': _urgencia,
       'modalidade': _modalidade.name,
-      'bairro': _local,
-      'cidade': _cidade,
-      'latitude': _latitude,
-      'longitude': _longitude,
     });
 
     //a tela pode ter sido fechada enquanto esperava

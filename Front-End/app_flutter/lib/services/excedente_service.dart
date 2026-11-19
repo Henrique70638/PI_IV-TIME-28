@@ -1,22 +1,8 @@
 //Autora: Laura Lugli Fonseca Pereira RA:25000739
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'api.dart';
-
-//o endereço da api muda dependendo de onde o app roda
-String get enderecoApi {
-  //navegador roda no proprio computador
-  if (kIsWeb) {
-    return 'http://localhost:3333/api';
-  }
-  //no emulador android o computador fica no 10.0.2.2
-  if (defaultTargetPlatform == TargetPlatform.android) {
-    return 'http://10.0.2.2:3333/api';
-  }
-  //simulador do iphone usa a rede do mac
-  return 'http://localhost:3333/api';
-}
+import 'sessao.dart';
 
 class ExcedenteService {
   //manda o excedente pra api, devolve null se deu certo ou a mensagem de erro
@@ -24,7 +10,11 @@ class ExcedenteService {
     try {
       final resposta = await http.post(
         Uri.parse('$enderecoApi/publicar'),
-        headers: {'Content-Type': 'application/json'},
+        //manda o crachá de login junto
+        headers: {
+          'Content-Type': 'application/json',
+          if (Sessao.token != null) 'Authorization': 'Bearer ${Sessao.token}',
+        },
         body: jsonEncode(dados),
       );
 
