@@ -1,19 +1,16 @@
-//Autora: Laura Lugli Fonseca Pereira RA: 25000739
+//Autora: Laura Lugli Fonseca Pereira RA:25000739
+
 import { Request, Response, NextFunction } from 'express';
-import { ObjectId } from 'mongodb';
-import { ErroApp } from '../../../shared/erros';
+import { usuarioLogado } from '../../../shared/autenticacao';
 import { listarExcedentesDoOfertante } from '../repositories/excedenteRepository';
 
-//devolve os excedentes publicados pelo usuário
-export async function listarExcedentes(req: Request, res: Response, next: NextFunction) {
+//devolve os excedentes publicados pelo usuario logado
+export async function listarExcedentes(_req: Request, res: Response, next: NextFunction) {
     try {
-        //o id vem no endereço
-        const ofertanteId = req.query.ofertanteId;
+        //o usuario vem do token, nao mais do endereco
+        const ofertanteId = usuarioLogado(res);
 
-        if (typeof ofertanteId !== 'string' || !ObjectId.isValid(ofertanteId))
-            throw new ErroApp(400, 'Ofertante inválido');
-
-        const excedentes = await listarExcedentesDoOfertante(new ObjectId(ofertanteId));
+        const excedentes = await listarExcedentesDoOfertante(ofertanteId);
         res.json(excedentes);
     } catch (erro) {
         next(erro);

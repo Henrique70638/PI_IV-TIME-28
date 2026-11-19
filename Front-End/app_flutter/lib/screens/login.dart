@@ -1,6 +1,8 @@
 //autor: Emilly Morelatto
 import 'package:flutter/material.dart';
 import 'cadastro.dart';
+import 'inicio.dart';
+import '../services/login_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,6 +16,8 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController senhaController = TextEditingController();
 
   bool mostrarSenha = false;
+  //fica true enquanto espera a api responder
+  bool enviando = false;
 
   final Color verde = const Color(0xFF267536);
   final Color laranja = const Color(0xFFF47700);
@@ -26,7 +30,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void entrar() {
+  Future<void> entrar() async {
     final email = emailController.text.trim();
     final senha = senhaController.text;
 
@@ -37,8 +41,27 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Login ainda não conectado ao servidor.')),
+    //trava o botão enquanto envia
+    setState(() => enviando = true);
+
+    //manda pra api e, se der certo, o token fica guardado na sessao
+    final erro = await LoginService.entrar(email, senha);
+
+    //a tela pode ter sido fechada enquanto esperava
+    if (!mounted) return;
+
+    setState(() => enviando = false);
+
+    //se voltou mensagem é porque deu erro
+    if (erro != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(erro)));
+      return;
+    }
+
+    //entrou: troca o login pela tela de inicio
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const InicioPage()),
     );
   }
 
@@ -268,7 +291,8 @@ class _LoginPageState extends State<LoginPage> {
                       SizedBox(
                         height: 104,
                         child: ElevatedButton(
-                          onPressed: entrar,
+                          //desliga o botão enquanto envia
+                          onPressed: enviando ? null : entrar,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: laranja,
                             foregroundColor: Colors.white,
@@ -277,14 +301,25 @@ class _LoginPageState extends State<LoginPage> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                             ),
+                            disabledBackgroundColor: laranja,
                           ),
-                          child: const Text(
-                            'Entrar',
-                            style: TextStyle(
-                              fontSize: 25,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
+                          //rodinha girando enquanto espera a api
+                          child: enviando
+                              ? const SizedBox(
+                                  width: 28,
+                                  height: 28,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 3,
+                                  ),
+                                )
+                              : const Text(
+                                  'Entrar',
+                                  style: TextStyle(
+                                    fontSize: 25,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                         ),
                       ),
 
