@@ -22,6 +22,14 @@ void main() {
     expect(query['raioKm'], '5.0');
   });
 
+  test('busca autenticada não envia localização arbitrária do cliente', () {
+    const filtros = FiltrosExcedentesApi(raioKm: 5, categoria: 'Todas');
+    final parametros = filtros.toQueryParameters();
+    expect(parametros.containsKey('latitude'), isFalse);
+    expect(parametros.containsKey('longitude'), isFalse);
+    expect(parametros.containsKey('categoria'), isFalse);
+  });
+
   test('converte produto da API em card do CULT+', () {
     final produto = ExcedenteCult.fromApi({
       'id': 'abc123',

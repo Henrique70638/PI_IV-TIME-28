@@ -3,6 +3,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'api.dart';
+import 'sessao.dart';
+
 class ErroBuscaExcedentes implements Exception {
   final String mensagem;
   const ErroBuscaExcedentes(this.mensagem);
@@ -12,16 +15,16 @@ class ErroBuscaExcedentes implements Exception {
 }
 
 class FiltrosExcedentesApi {
-  final double latitude;
-  final double longitude;
+  final double? latitude;
+  final double? longitude;
   final double raioKm;
   final String? categoria;
   final String? modalidade;
   final String? busca;
 
   const FiltrosExcedentesApi({
-    required this.latitude,
-    required this.longitude,
+    this.latitude,
+    this.longitude,
     required this.raioKm,
     this.categoria,
     this.modalidade,
@@ -29,8 +32,8 @@ class FiltrosExcedentesApi {
   });
 
   Map<String, String> toQueryParameters() => {
-        'latitude': latitude.toString(),
-        'longitude': longitude.toString(),
+        if (latitude != null) 'latitude': latitude.toString(),
+        if (longitude != null) 'longitude': longitude.toString(),
         'raioKm': raioKm.toString(),
         if (categoria != null && categoria != 'Todas')
           'categoria': categoria == 'Plantas'
@@ -60,16 +63,20 @@ class BuscaExcedentesApi {
     Future<RespostaHttpBusca> Function(Uri)? transporte,
   })  : _transporte = transporte,
         baseUrl = baseUrl ?? Uri.parse(
-          const String.fromEnvironment(
-            'CULT_API_URL',
-            defaultValue: 'http://127.0.0.1:3333',
-          ),
+          const String.fromEnvironment('CULT_API_URL') == ''
+              ? enderecoApi
+              : const String.fromEnvironment('CULT_API_URL'),
         );
 
   Future<RespostaHttpBusca> _buscarHttp(Uri uri) async {
     final cliente = HttpClient()..connectionTimeout = tempoLimite;
     try {
       final requisicao = await cliente.getUrl(uri).timeout(tempoLimite);
+      // A API obtém a localização cadastrada usando a sessão verificada.
+      final token = Sessao.token;
+      if (token != null && token.isNotEmpty) {
+        requisicao.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      }
       final resposta = await requisicao.close().timeout(tempoLimite);
       final corpo = await resposta.transform(utf8.decoder).join().timeout(tempoLimite);
       return RespostaHttpBusca(resposta.statusCode, corpo);
@@ -92,9 +99,11 @@ class BuscaExcedentesApi {
 
       if (resposta.status != HttpStatus.ok) {
         throw ErroBuscaExcedentes(
-          resposta.status >= 500
-              ? 'O servidor está indisponível. Tente novamente.'
-              : 'Não foi possível carregar os excedentes (${resposta.status}).',
+          resposta.status == 401
+              ? 'Faça login para consultar ofertas próximas.'
+              : resposta.status >= 500
+                  ? 'O servidor está indisponível. Tente novamente.'
+                  : 'Não foi possível carregar os excedentes (${resposta.status}).',
         );
       }
       final dados = jsonDecode(resposta.corpo);

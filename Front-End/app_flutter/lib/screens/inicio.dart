@@ -3,6 +3,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../services/busca_excedentes_api.dart';
+import '../services/conexao_service.dart';
+import '../services/sessao.dart';
+import 'conexao_confirmada.dart';
 import 'conversas.dart';
 import 'perfil.dart';
 import 'publicar.dart';
@@ -166,14 +169,15 @@ class _InicioPageState extends State<InicioPage> {
   static const Color fundo = Color(0xFFF7F8F2);
   static const Color textoEscuro = Color(0xFF20251F);
 
-  // A API é opcional: sem coordenadas reais, a tela continua no modo demonstração.
-  static const bool _usarApi = bool.fromEnvironment('CULT_USAR_API');
+  // Usuários autenticados veem ofertas do banco; prévias sem login seguem em demo.
+  bool get _usarApi => Sessao.logado || const bool.fromEnvironment('CULT_USAR_API');
   static const String _latitudeConfigurada = String.fromEnvironment('CULT_LATITUDE');
   static const String _longitudeConfigurada = String.fromEnvironment('CULT_LONGITUDE');
   static const bool _apiDemonstracao = bool.fromEnvironment('CULT_API_DEMO');
   final BuscaExcedentesApi _api = BuscaExcedentesApi();
   List<ExcedenteCult> _excedentesApi = [];
   bool _carregando = false;
+  bool _enviandoInteresse = false;
   String? _erroApi;
   int _versaoConsulta = 0;
   Timer? _debounceBusca;
@@ -181,8 +185,10 @@ class _InicioPageState extends State<InicioPage> {
   final TextEditingController _buscaController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  String _localizacao = _usarApi ? 'Localização configurada' : 'Jardim das Flores';
-  String _categoria = 'Frutas'; // Filtro inicial igual ao da modelagem.
+  String _localizacao = Sessao.logado
+      ? (Sessao.usuario?['bairro']?.toString() ?? 'Localização do cadastro')
+      : 'Jardim das Flores';
+  String _categoria = Sessao.logado ? 'Todas' : 'Frutas';
   String _tipo = 'Todos';
   double _raioKm = 5;
 
@@ -209,9 +215,9 @@ class _InicioPageState extends State<InicioPage> {
     final versao = ++_versaoConsulta;
     final latitude = double.tryParse(_latitudeConfigurada);
     final longitude = double.tryParse(_longitudeConfigurada);
-    if (latitude == null || longitude == null ||
+    if (!Sessao.logado && (latitude == null || longitude == null ||
         latitude < -90 || latitude > 90 ||
-        longitude < -180 || longitude > 180) {
+        longitude < -180 || longitude > 180)) {
       setState(() {
         _carregando = false;
         _erroApi = 'Configure coordenadas autorizadas para a busca.';
@@ -225,8 +231,8 @@ class _InicioPageState extends State<InicioPage> {
     });
     try {
       final resultados = await _api.buscar(FiltrosExcedentesApi(
-        latitude: latitude,
-        longitude: longitude,
+        latitude: Sessao.logado ? null : latitude,
+        longitude: Sessao.logado ? null : longitude,
         raioKm: _raioKm,
         categoria: _categoria,
         modalidade: _tipo,
@@ -295,7 +301,7 @@ class _InicioPageState extends State<InicioPage> {
 
   Future<void> _editarLocalizacao() async {
     if (_usarApi) {
-      _mensagem('A localização da busca está definida nas configurações do teste.');
+      _mensagem('A busca usa a localização cadastrada na sua conta.');
       return;
     }
     String localTemporario = _localizacao;
@@ -459,6 +465,43 @@ class _InicioPageState extends State<InicioPage> {
     );
   }
 
+  Future<void> _registrarInteresse(ExcedenteCult produto) async {
+    if (_enviandoInteresse || produto.id == null || !Sessao.logado) {
+      _mensagem('Faça login e selecione uma oferta real para se conectar.');
+      return;
+    }
+    setState(() => _enviandoInteresse = true);
+    try {
+      // Só apresenta a confirmação após o backend retornar HTTP 201.
+      final conexao = await ConexaoService.criar(
+        excedenteId: produto.id!,
+        raioKm: _raioKm,
+        categoria: _categoria == 'Todas' ? null : _categoria,
+      );
+      if (!mounted) return;
+      await Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => ConexaoConfirmadaPage(
+          nomeOfertante: conexao.nomeOfertante,
+          nomeProduto: conexao.nomeProduto,
+          quantidade: conexao.quantidadeFormatada,
+          localizacao: conexao.localizacao,
+          distanciaKm: conexao.distanciaKm,
+          ehDoacao: conexao.ehDoacao,
+          emojiProduto: produto.emoji,
+          avaliacaoOfertante: conexao.avaliacaoOfertante,
+          totalAvaliacoes: conexao.totalAvaliacoes,
+          onVoltarBusca: () => Navigator.of(context).pop(),
+          onAbrirChat: () => _mensagem(
+            'Chat deste match ainda precisa ser conectado ao módulo Conversas.'),
+        ),
+      ));
+    } on ErroConexao catch (erro) {
+      if (mounted) _mensagem(erro.mensagem);
+    } finally {
+      if (mounted) setState(() => _enviandoInteresse = false);
+    }
+  }
+
   void _abrirProduto(ExcedenteCult produto) {
     final doacao = produto.tipo == TipoOferta.doacao;
     showModalBottomSheet<void>(
@@ -519,10 +562,7 @@ class _InicioPageState extends State<InicioPage> {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(modalContext);
-                    _mensagem(
-                      'O interesse em ${produto.nome} poderá ser enviado '
-                      'quando a conexão com o servidor estiver pronta.',
-                    );
+                    _registrarInteresse(produto);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: verde,
@@ -903,16 +943,21 @@ class _InicioPageState extends State<InicioPage> {
     }
 
     // Navegação padrão para as telas que já existem no projeto.
-    // O perfil demonstrativo não representa um usuário autenticado.
+    // Ao navegar de uma sessão real, usa os dados públicos do login.
+    final usuario = Sessao.usuario;
     final Widget? pagina = switch (nome) {
       'Publicar' => const PublicarPage(),
       'Conversas' => const ConversasPage(),
-      'Perfil' => const PerfilPage(
+      'Perfil' => PerfilPage(
           usuario: UsuarioPerfil(
-            nome: 'Usuário de demonstração',
-            email: 'Sem autenticação',
-            tipoUsuario: 'Interessado',
-            localizacao: 'Jardim das Flores',
+            nome: usuario?['nome']?.toString() ?? 'Usuário de demonstração',
+            email: usuario?['email']?.toString() ?? 'Sem autenticação',
+            tipoUsuario: switch (usuario?['perfil']) {
+              'ofertante' => 'Ofertante',
+              'ambos' => 'Ambos',
+              _ => 'Interessado',
+            },
+            localizacao: usuario?['bairro']?.toString() ?? 'Jardim das Flores',
           ),
         ),
       _ => null,

@@ -8,7 +8,7 @@ Implementação: Rafaela Jacobsen Braga — RA 25004280.
 - `GET /api/conexao/matches/:matchId` — lê a confirmação apenas se o usuário autenticado participa do match. Retorna `{ "conexao": {...} }`.
 - `GET /api/conexao/status` — rota preexistente, preservada.
 
-**Importante — autenticação ainda pendente:** as duas rotas novas exigem `res.locals.usuarioId` definido por middleware que **verificou uma sessão ou token**. Como a implementação atual de login do grupo ainda não fornece esse middleware, elas retornam `401` até essa integração existir. **Não** preencher `res.locals.usuarioId` diretamente com `req.body`, `req.query` ou um header sem verificação. O `interessadoId` é sempre derivado da identidade autenticada e nunca aceito no JSON.
+**Autenticação atual:** o middleware `lerToken` do grupo já está registrado em `src/app.ts` e preenche `res.locals.usuarioId` somente após validar o JWT. As rotas retornam `401` sem sessão válida. **Não** preencher `res.locals.usuarioId` diretamente com `req.body`, `req.query` ou um header sem verificação. O `interessadoId` é sempre derivado da identidade autenticada e nunca aceito no JSON.
 
 ## Regras
 
@@ -34,4 +34,4 @@ node --import tsx --test tests/conexao.test.ts
 
 Esses testes não fazem escrita no banco: utilizam um repositório de teste. Para testar com MongoDB real, usar base de testes autorizada e dados de exemplo do grupo, com índices de `database/mongo/02-indices.js`. Verificar erros `401`, `400`, `403`, `404`, `409`, `422` e `503`, além do caso `201`. Não testar gravações na base de produção sem autorização.
 
-**Pendências antes da integração final:** middleware de autenticação verificada, teste de ponta a ponta com MongoDB pelo Henrique, ligação do Flutter ao endpoint e revisão do texto da tela (`O ofertante também foi avisado`) enquanto não houver notificação real.
+**Integração candidata para revisão:** tela Inicial envia JWT e lê excedentes da API ao receber sessão autenticada; o botão de interesse chama a rota de criação, e a tela de confirmação recebe o resultado retornado. Ainda faltam testes de ponta a ponta com MongoDB, índices geoespaciais e de unicidade presentes, além da integração do chat pelo responsável. O cadastro atual usa coordenadas padrão de Campinas quando o usuário não fornece localização geográfica; essas coordenadas NÃO devem ser confundidas com localização precisa do usuário. Não foi implementado envio de notificações ao ofertante.

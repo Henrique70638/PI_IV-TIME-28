@@ -12,8 +12,8 @@ class ConexaoConfirmadaPage extends StatelessWidget {
   final double distanciaKm;
   final bool ehDoacao;
   final String emojiProduto;
-  final double avaliacaoOfertante;
-  final int totalAvaliacoes;
+  final double? avaliacaoOfertante;
+  final int? totalAvaliacoes;
 
   // Callbacks opcionais para integrar futuramente o chat específico do match
   // e a navegação do aplicativo, sem alterar a aparência desta tela.
@@ -272,7 +272,7 @@ class ConexaoConfirmadaPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Contato liberado',
+                  'Interesse registrado',
                   style: TextStyle(
                     color: verdeEscuro,
                     fontSize: 14,
@@ -289,26 +289,19 @@ class ConexaoConfirmadaPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 5),
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 7,
-                  runSpacing: 3,
-                  children: [
-                    const Text(
-                      '★★★★★',
-                      style: TextStyle(
-                        fontSize: 16,
-                        letterSpacing: 1.3,
-                        color: Color(0xFFF5A623),
-                      ),
-                    ),
-                    Text(
-                      '${avaliacaoOfertante.toStringAsFixed(1)} · '
-                      '$totalAvaliacoes avaliações',
-                      style: const TextStyle(fontSize: 13, color: cinza),
-                    ),
-                  ],
-                ),
+                if (avaliacaoOfertante != null && totalAvaliacoes != null)
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 7,
+                    runSpacing: 3,
+                    children: [
+                      const Text('★★★★★',
+                          style: TextStyle(fontSize: 16, color: Color(0xFFF5A623))),
+                      Text('${avaliacaoOfertante?.toStringAsFixed(1)} · '
+                          '$totalAvaliacoes avaliações',
+                          style: const TextStyle(fontSize: 13, color: cinza)),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -392,7 +385,7 @@ class ConexaoConfirmadaPage extends StatelessWidget {
               const SizedBox(height: 14),
               Text(
                 'Você e $nomeOfertante foram conectados. '
-                'O ofertante também foi avisado.',
+                'O interesse foi registrado no sistema.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Color(0xFF7B827A),
