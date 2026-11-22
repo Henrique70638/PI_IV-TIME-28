@@ -6,8 +6,10 @@
 
 import { ObjectId } from 'mongodb';
 
+// situacao da conexao entre ofertante e interessado
 export type StatusMatch = 'conectado' | 'concluido' | 'cancelado';
 
+// copia dos dados da oferta no momento do match (cabecalho do chat)
 export interface ExcedenteResumo {
   produto: string;
   categoria: string;
@@ -16,12 +18,14 @@ export interface ExcedenteResumo {
   unidade: string;
 }
 
+// resumo da ultima mensagem, guardado dentro do match
 export interface UltimaMensagem {
   texto: string;
   autorId: ObjectId;
   criadoEm: Date;
 }
 
+// documento da colecao matches: a conexao entre uma oferta e um interessado
 export interface Match {
   _id: ObjectId;
   excedenteId: ObjectId;
@@ -29,6 +33,7 @@ export interface Match {
   interessadoId: ObjectId;
   ofertanteNome: string;
   interessadoNome: string;
+  // os dois usuarios juntos, para achar "minhas conversas" com um unico indice
   participantes: ObjectId[];
   status: StatusMatch;
   criterios: { localizacao: boolean; categoria: boolean; distanciaKm: number };
@@ -38,6 +43,7 @@ export interface Match {
   atualizadoEm: Date;
 }
 
+// documento da colecao mensagens
 export interface Mensagem {
   _id?: ObjectId;
   matchId: ObjectId;
@@ -46,6 +52,7 @@ export interface Mensagem {
   criadoEm: Date;
 }
 
+// item da lista de conversas, ja do ponto de vista do usuario logado
 export interface ConversaResumo {
   id: string;
   outroNome: string;
@@ -56,6 +63,7 @@ export interface ConversaResumo {
   atualizadoEm: Date;
 }
 
+// mensagem como o app recebe; "minha" indica se foi enviada por quem esta logado
 export interface MensagemPublica {
   id: string;
   texto: string;

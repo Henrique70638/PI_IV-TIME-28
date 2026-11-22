@@ -7,6 +7,7 @@
 import { MongoClient } from 'mongodb';
 import 'dotenv/config';
 
+// indices que cada colecao precisa ter (criados por database/mongo/02-indices.js)
 const ESPERADOS: Record<string, string[]> = {
   usuarios: ['email_unico'],
   excedentes: ['geo_status_categoria', 'ofertante_recentes'],
@@ -14,6 +15,8 @@ const ESPERADOS: Record<string, string[]> = {
   mensagens: ['mensagens_do_match'],
 };
 
+// confere conexao, colecoes, indices, validacao do schema e busca geografica;
+// sai com codigo 1 se algo falhar. Rodar com: npm run testar:banco
 async function main() {
   const uri = process.env.MONGODB_URI;
   const nomeBanco = process.env.MONGO_BANCO ?? 'cultmais';
@@ -47,6 +50,7 @@ async function main() {
       }
     }
 
+    // teste de escrita: usa um e-mail unico e apaga o que criou no final
     const usuarios = banco.collection('usuarios');
     const email = `teste-conexao-${Date.now()}@cultmais.test`;
     const base = {
@@ -75,6 +79,7 @@ async function main() {
       ok('usuário de teste removido');
     }
 
+    // busca por proximidade: ofertas disponiveis a ate 5 km do centro de Campinas
     const perto = await banco
       .collection('excedentes')
       .aggregate([

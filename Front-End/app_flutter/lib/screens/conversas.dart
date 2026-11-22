@@ -14,6 +14,7 @@ import '../services/sessao.dart';
 import '../services/conversas_service.dart';
 import '../services/catalogo_produtos.dart';
 
+// uma linha da lista de conversas, ja pronta para mostrar na tela
 class ConversaItem {
   final String? matchId;
   final String? status;
@@ -41,6 +42,8 @@ class ConversaItem {
     required this.hora,
   });
 
+  // converte a conversa recebida da API: formata a quantidade, a unidade,
+  // o tipo (doacao ou venda) e a hora da ultima mensagem
   factory ConversaItem.fromApi(ConversaRemota dados) {
     final simbolo = CatalogoProdutos.ilustracao(dados.produto, dados.categoria);
     final valor = dados.quantidade.toDouble() == dados.quantidade.toInt()
@@ -73,6 +76,8 @@ class ConversaItem {
   }
 }
 
+// tela com a lista de conversas do usuario; busca na API e mostra exemplos
+// de apresentacao abaixo da lista real
 class ConversasPage extends StatefulWidget {
   // Lista opcional destinada a testes de interface; no aplicativo real, usamos a API.
   final List<ConversaItem>? conversas;
@@ -84,6 +89,7 @@ class ConversasPage extends StatefulWidget {
   State<ConversasPage> createState() => _ConversasPageState();
 }
 
+// estado da tela: conversas carregadas, carregamento e erro
 class _ConversasPageState extends State<ConversasPage> {
   static const Color verde = Color(0xFF267536);
   static const Color fundo = Color(0xFFF7F8F2);
@@ -94,8 +100,10 @@ class _ConversasPageState extends State<ConversasPage> {
   late List<ConversaItem> _conversas;
   bool _carregando = false;
   String? _erro;
+  // cada carregamento ganha um numero; resposta de um carregamento antigo e descartada
   int _versao = 0;
 
+  // se nao vieram conversas prontas, carrega da API depois do primeiro frame
   @override
   void initState() {
     super.initState();
@@ -107,6 +115,7 @@ class _ConversasPageState extends State<ConversasPage> {
     }
   }
 
+  // busca a lista na API e converte cada conversa em ConversaItem
   Future<void> _carregar() async {
     final versao = ++_versao;
     setState(() {
@@ -129,6 +138,7 @@ class _ConversasPageState extends State<ConversasPage> {
     }
   }
 
+  // abre o chat da conversa e, ao voltar, recarrega a lista para mostrar a ultima mensagem
   Future<void> _abrirChat(BuildContext context, ConversaItem conversa) async {
     await Navigator.push<void>(
       context,
@@ -150,6 +160,7 @@ class _ConversasPageState extends State<ConversasPage> {
     if (mounted && widget.conversas == null) await _carregar();
   }
 
+  // uma linha da lista: avatar, nome, produto e ultima mensagem
   Widget _item(BuildContext context, ConversaItem conversa) {
     return InkWell(
       onTap: () => _abrirChat(context, conversa),
@@ -246,6 +257,7 @@ class _ConversasPageState extends State<ConversasPage> {
     ),
   ];
 
+  // abre o chat de um exemplo, sem usar a API
   Future<void> _abrirExemplo(ConversaItem conversa) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
@@ -271,6 +283,7 @@ class _ConversasPageState extends State<ConversasPage> {
     );
   }
 
+  // lista os exemplos de apresentacao
   Widget _secaoExemplos() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -288,6 +301,7 @@ class _ConversasPageState extends State<ConversasPage> {
     );
   }
 
+  // visual de um exemplo, igual ao de uma conversa real
   Widget _cartaoExemplo(ConversaItem conversa) {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -405,6 +419,7 @@ class _ConversasPageState extends State<ConversasPage> {
     );
   }
 
+  // menu de baixo para trocar entre as telas do app
   Widget _barraInferior(BuildContext context) {
     final dados = Sessao.usuario;
     return Container(
@@ -461,6 +476,7 @@ class _ConversasPageState extends State<ConversasPage> {
     );
   }
 
+  // monta a tela: titulo, lista (ou carregando/erro/vazio), exemplos e menu de baixo
   @override
   Widget build(BuildContext context) {
     return Scaffold(

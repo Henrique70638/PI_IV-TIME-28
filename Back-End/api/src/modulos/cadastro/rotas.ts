@@ -9,8 +9,10 @@ import { cadastrar } from './handlers/cadastrar';
 
 export const rotasCadastro = Router();
 
+// rota de teste: so confirma que o modulo de cadastro esta no ar
 rotasCadastro.get('/status', (_req, res) => {
   res.json({ tela: 'cadastro', ok: true });
 });
 
+// POST /api/cadastro: cria um usuario novo
 rotasCadastro.post('/', cadastrar);

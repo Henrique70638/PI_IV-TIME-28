@@ -8,6 +8,9 @@ import 'package:flutter/material.dart';
 
 import 'conexao_confirmada.dart';
 
+// tela com os detalhes de uma oferta: produto, quantidade, local, descricao e ofertante.
+// Os valores padrao sao de exemplo; "mostrarInteresse" esconde o botao quando
+// a tela e aberta de dentro de uma conversa
 class DetalheOfertaPage extends StatelessWidget {
   final String produto;
   final String emojiProduto;
@@ -53,15 +56,18 @@ class DetalheOfertaPage extends StatelessWidget {
   static const Color textoEscuro = Color(0xFF20251F);
   static const Color fundoClaro = Color(0xFFE4F2E6);
 
+  // altura da faixa verde do topo e quanto o cartao branco sobe sobre ela
   static const double alturaHero = 300;
   static const double sobreposicao = 30;
 
+  // distancia com uma casa decimal e virgula (1,2)
   String get distanciaFormatada =>
       distanciaKm.toStringAsFixed(1).replaceAll('.', ',');
 
   String get avaliacaoFormatada =>
       avaliacaoOfertante?.toStringAsFixed(1).replaceAll('.', ',') ?? '';
 
+  // toque em "Tenho interesse": usa a acao recebida ou abre a tela de conexao confirmada
   void _tenhoInteresse(BuildContext context) {
     if (onTenhoInteresse != null) {
       onTenhoInteresse!();
@@ -86,6 +92,7 @@ class DetalheOfertaPage extends StatelessWidget {
     );
   }
 
+  // botao redondo do topo (voltar e compartilhar; o de compartilhar ainda nao tem acao)
   Widget _botaoCircular({
     required IconData icone,
     required VoidCallback? onTap,
@@ -105,6 +112,7 @@ class DetalheOfertaPage extends StatelessWidget {
     );
   }
 
+  // faixa verde do topo com o emoji do produto
   Widget _hero(BuildContext context) {
     return Container(
       height: alturaHero,
@@ -121,6 +129,7 @@ class DetalheOfertaPage extends StatelessWidget {
     );
   }
 
+  // selo que mostra se a oferta e doacao ou venda
   Widget _selo() {
     final texto = ehDoacao ? '🎁 Doação' : '💰 Venda';
 
@@ -148,6 +157,7 @@ class DetalheOfertaPage extends StatelessWidget {
     );
   }
 
+  // cartao com nome do produto, categoria, quantidade, local, distancia e descricao
   Widget _informacoes() {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
@@ -244,6 +254,7 @@ class DetalheOfertaPage extends StatelessWidget {
     );
   }
 
+  // bloco com avatar, nome e avaliacao de quem oferece
   Widget _ofertante() {
     return Row(
       children: [
@@ -298,6 +309,7 @@ class DetalheOfertaPage extends StatelessWidget {
     );
   }
 
+  // rodape fixo com o botao "Tenho interesse"
   Widget _rodape(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 14, 24, 14),
@@ -338,6 +350,8 @@ class DetalheOfertaPage extends StatelessWidget {
     );
   }
 
+  // monta a tela em camadas: faixa verde do topo, cartao branco com as informacoes,
+  // selo de doacao/venda, botoes do topo e, se permitido, o rodape com o interesse
   @override
   Widget build(BuildContext context) {
     return Scaffold(
