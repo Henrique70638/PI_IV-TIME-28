@@ -7,6 +7,7 @@ import '../services/catalogo_produtos.dart';
 import 'editar_perfil.dart';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
 
 // cores da identidade visual
 // 0xFF diz que a cor é 100% opaca
@@ -122,6 +123,9 @@ class _PublicarPageState extends State<PublicarPage> {
       'unidade': _unidade,
       'urgencia': _urgencia,
       'modalidade': _modalidade.name,
+      //manda a foto como texto, so quando tem foto
+      if (_fotoBytes != null)
+        'fotos': ['data:image/jpeg;base64,${base64Encode(_fotoBytes!)}'],
     });
 
     //a tela pode ter sido fechada enquanto esperava
@@ -273,7 +277,7 @@ class _PublicarPageState extends State<PublicarPage> {
     );
   }
 
-    //quadradinho com a foto de verdade e o X pra remover
+  //quadradinho com a foto de verdade e o X pra remover
   Widget _fotoReal() {
     return Stack(
       clipBehavior: Clip.none,
