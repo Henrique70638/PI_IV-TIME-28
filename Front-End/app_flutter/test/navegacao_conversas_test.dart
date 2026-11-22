@@ -11,7 +11,9 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   tearDown(Sessao.sair);
 
-  testWidgets('Conversas mostra o menu inferior e volta para Início', (tester) async {
+  testWidgets('Conversas mostra o menu inferior e volta para Início', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const MaterialApp(home: ConversasPage(conversas: [])),
     );
@@ -50,8 +52,29 @@ void main() {
     expect(find.text('Pessoa Teste'), findsWidgets);
   });
 
-  testWidgets('Conversas continua abrindo a conversa selecionada', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: ConversasPage()));
+  testWidgets('Conversas continua abrindo a conversa selecionada', (
+    tester,
+  ) async {
+    // Conversa de teste explícita: o aplicativo real não mostra dados mocados.
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ConversasPage(
+          conversas: [
+            ConversaItem(
+              nome: 'Roberto C.',
+              papel: 'Ofertante',
+              emojiAvatar: '👤',
+              emojiProduto: '🥭',
+              produto: 'Manga Tommy',
+              detalheOferta: 'Doação',
+              avaliacao: null,
+              ultimaMensagem: 'Oi',
+              hora: '9:41',
+            ),
+          ],
+        ),
+      ),
+    );
     await tester.tap(find.text('Roberto C.'));
     await tester.pumpAndSettle();
     expect(find.byType(ChatPage), findsOneWidget);

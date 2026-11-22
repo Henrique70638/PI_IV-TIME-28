@@ -11,59 +11,126 @@ import 'inicio.dart';
 import 'perfil.dart';
 import 'publicar.dart';
 import '../services/sessao.dart';
+import '../services/conversas_service.dart';
+import '../services/catalogo_produtos.dart';
 
 class ConversaItem {
+  final String? matchId;
+  final String? status;
   final String nome;
   final String papel;
   final String emojiAvatar;
   final String emojiProduto;
   final String produto;
   final String detalheOferta;
-  final double avaliacao;
+  final double? avaliacao;
   final String ultimaMensagem;
   final String hora;
 
   const ConversaItem({
+    this.matchId,
+    this.status,
     required this.nome,
     required this.papel,
     required this.emojiAvatar,
     required this.emojiProduto,
     required this.produto,
     required this.detalheOferta,
-    required this.avaliacao,
+    this.avaliacao,
     required this.ultimaMensagem,
     required this.hora,
   });
+
+  factory ConversaItem.fromApi(ConversaRemota dados) {
+    final simbolo = CatalogoProdutos.ilustracao(dados.produto, dados.categoria);
+    final valor = dados.quantidade.toDouble() == dados.quantidade.toInt()
+        ? dados.quantidade.toInt().toString()
+        : dados.quantidade.toString();
+    final unidade = switch (dados.unidade) {
+      'un' => 'unidades',
+      'maco' => 'maços',
+      'muda' => 'mudas',
+      _ => dados.unidade,
+    };
+    final data = dados.ultimaMensagemEm;
+    final hora = data == null
+        ? ''
+        : '${data.hour.toString().padLeft(2, '0')}:${data.minute.toString().padLeft(2, '0')}';
+    return ConversaItem(
+      matchId: dados.id,
+      status: dados.status,
+      nome: dados.outroNome,
+      papel: dados.papelDoOutro == 'ofertante' ? 'Ofertante' : 'Interessado',
+      emojiAvatar: '👤',
+      emojiProduto: simbolo,
+      produto: dados.produto,
+      detalheOferta:
+          '${dados.modalidade == 'doacao' ? '🎁 Doação' : '💰 Venda'} · ~$valor $unidade',
+      avaliacao: null,
+      ultimaMensagem: dados.ultimaMensagem ?? 'Conexão confirmada',
+      hora: hora,
+    );
+  }
 }
 
-class ConversasPage extends StatelessWidget {
-  final List<ConversaItem> conversas;
+class ConversasPage extends StatefulWidget {
+  // Lista opcional destinada a testes de interface; no aplicativo real, usamos a API.
+  final List<ConversaItem>? conversas;
+  final ConversasService? api;
 
-  const ConversasPage({
-    super.key,
-    this.conversas = const [
-      ConversaItem(
-        nome: 'Roberto C.',
-        papel: 'Ofertante',
-        emojiAvatar: '🧑🏽‍🌾',
-        emojiProduto: '🥭',
-        produto: 'Manga Tommy',
-        detalheOferta: '🎁 Doação · ~5 kg · 1,2 km',
-        avaliacao: 4.8,
-        ultimaMensagem: 'Combinado, obrigado! 🙌',
-        hora: '9:41',
-      ),
-    ],
-  });
+  const ConversasPage({super.key, this.conversas, this.api});
 
+  @override
+  State<ConversasPage> createState() => _ConversasPageState();
+}
+
+class _ConversasPageState extends State<ConversasPage> {
   static const Color verde = Color(0xFF267536);
   static const Color fundo = Color(0xFFF7F8F2);
   static const Color cinza = Color(0xFF929A91);
   static const Color textoEscuro = Color(0xFF20251F);
   static const Color fundoAvatar = Color(0xFFE4F2E6);
 
-  void _abrirChat(BuildContext context, ConversaItem conversa) {
-    Navigator.push(
+  late List<ConversaItem> _conversas;
+  bool _carregando = false;
+  String? _erro;
+  int _versao = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _conversas = widget.conversas ?? [];
+    if (widget.conversas == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _carregar();
+      });
+    }
+  }
+
+  Future<void> _carregar() async {
+    final versao = ++_versao;
+    setState(() {
+      _carregando = true;
+      _erro = null;
+    });
+    try {
+      final lista = await (widget.api ?? ConversasService()).listar();
+      if (!mounted || versao != _versao) return;
+      setState(() {
+        _conversas = lista.map(ConversaItem.fromApi).toList();
+        _carregando = false;
+      });
+    } catch (erro) {
+      if (!mounted || versao != _versao) return;
+      setState(() {
+        _erro = erro.toString();
+        _carregando = false;
+      });
+    }
+  }
+
+  Future<void> _abrirChat(BuildContext context, ConversaItem conversa) async {
+    await Navigator.push<void>(
       context,
       MaterialPageRoute(
         builder: (context) => ChatPage(
@@ -74,9 +141,13 @@ class ConversasPage extends StatelessWidget {
           emojiProduto: conversa.emojiProduto,
           produto: conversa.produto,
           detalheOferta: conversa.detalheOferta,
+          matchId: conversa.matchId,
+          mensagensIniciais: const [],
+          api: widget.api,
         ),
       ),
     );
+    if (mounted && widget.conversas == null) await _carregar();
   }
 
   Widget _item(BuildContext context, ConversaItem conversa) {
@@ -99,7 +170,10 @@ class ConversasPage extends StatelessWidget {
                 color: fundoAvatar,
                 shape: BoxShape.circle,
               ),
-              child: Text(conversa.emojiAvatar, style: const TextStyle(fontSize: 26)),
+              child: Text(
+                conversa.emojiAvatar,
+                style: const TextStyle(fontSize: 26),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -138,18 +212,155 @@ class ConversasPage extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Text(conversa.hora, style: const TextStyle(fontSize: 12, color: cinza)),
+            Text(
+              conversa.hora,
+              style: const TextStyle(fontSize: 12, color: cinza),
+            ),
           ],
         ),
       ),
     );
   }
 
+  // Exemplos exclusivos de apresentação; nunca são enviados ao MongoDB.
+  static const List<ConversaItem> _exemplos = [
+    ConversaItem(
+      nome: 'Marina',
+      papel: 'Ofertante',
+      emojiAvatar: '👩🏽',
+      emojiProduto: '🍌',
+      produto: 'Banana prata',
+      detalheOferta: '🎁 Doação · ~2 kg',
+      ultimaMensagem: 'Oi! Podemos combinar a retirada?',
+      hora: '10:24',
+    ),
+    ConversaItem(
+      nome: 'Pedro',
+      papel: 'Interessado',
+      emojiAvatar: '👨🏽',
+      emojiProduto: '🥬',
+      produto: 'Alface',
+      detalheOferta: '🎁 Doação · ~3 unidades',
+      ultimaMensagem: 'Obrigado pela oferta!',
+      hora: 'Ontem',
+    ),
+  ];
+
+  Future<void> _abrirExemplo(ConversaItem conversa) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => ChatPage(
+          nomeOutro: conversa.nome,
+          papelOutro: conversa.papel,
+          emojiAvatar: conversa.emojiAvatar,
+          emojiProduto: conversa.emojiProduto,
+          produto: conversa.produto,
+          detalheOferta: conversa.detalheOferta,
+          avisoConexao: 'Demonstração · mensagens não são salvas nem enviadas',
+          mensagensIniciais: [
+            MensagemChat(
+              texto: conversa.ultimaMensagem,
+              minha: false,
+              hora: conversa.hora,
+            ),
+          ],
+          onEnviarMensagem:
+              (_) {}, // O chat local permite demonstrar a digitação.
+        ),
+      ),
+    );
+  }
+
+  Widget _secaoExemplos() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final exemplo in _exemplos)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: InkWell(
+              onTap: () => _abrirExemplo(exemplo),
+              borderRadius: BorderRadius.circular(18),
+              child: _cartaoExemplo(exemplo),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _cartaoExemplo(ConversaItem conversa) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: fundoAvatar,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              conversa.emojiAvatar,
+              style: const TextStyle(fontSize: 26),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  conversa.nome,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: textoEscuro,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${conversa.emojiProduto} ${conversa.produto}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: verde,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  conversa.ultimaMensagem,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 14, color: cinza),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            conversa.hora,
+            style: const TextStyle(fontSize: 12, color: cinza),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Mantém o menu inferior entre as telas sem modificar a conversa aberta.
   void _navegar(BuildContext context, Widget pagina) {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => pagina),
-    );
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute<void>(builder: (_) => pagina));
   }
 
   Widget _itemNavegacao({
@@ -235,7 +446,8 @@ class ConversasPage extends StatelessWidget {
                     usuario: UsuarioPerfil(
                       nome: (dados?['nome'] ?? 'Usuário').toString(),
                       email: (dados?['email'] ?? '').toString(),
-                      tipoUsuario: (dados?['perfil'] ?? 'Interessado').toString(),
+                      tipoUsuario: (dados?['perfil'] ?? 'Interessado')
+                          .toString(),
                       localizacao: (dados?['bairro'] ?? dados?['cidade'] ?? '')
                           .toString(),
                     ),
@@ -270,20 +482,43 @@ class ConversasPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: conversas.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'Você ainda não tem conversas.\nConecte-se a uma oferta para começar.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 15, color: cinza),
+                child: _carregando && _conversas.isEmpty
+                    ? const Center(child: CircularProgressIndicator())
+                    : _erro != null && _conversas.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_erro!, textAlign: TextAlign.center),
+                            TextButton(
+                              onPressed: _carregar,
+                              child: const Text('Tentar novamente'),
+                            ),
+                          ],
                         ),
                       )
-                    : ListView.separated(
-                        itemCount: conversas.length,
-                        separatorBuilder: (context, indice) =>
-                            const SizedBox(height: 12),
-                        itemBuilder: (context, indice) =>
-                            _item(context, conversas[indice]),
+                    : RefreshIndicator(
+                        onRefresh: _carregar,
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            if (_conversas.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16),
+                                child: Text(
+                                  'Você ainda não tem conversas reais.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 14, color: cinza),
+                                ),
+                              ),
+                            for (final conversa in _conversas)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _item(context, conversa),
+                              ),
+                            if (widget.conversas == null) _secaoExemplos(),
+                          ],
+                        ),
                       ),
               ),
             ],

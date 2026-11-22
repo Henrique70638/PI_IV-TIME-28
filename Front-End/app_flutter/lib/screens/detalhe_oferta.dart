@@ -1,6 +1,7 @@
 /*
- * Autor: Henrique Leite de Camargo
- * RA: 25005997
+ * Autores:
+ * Henrique Leite de Camargo - RA: 25005997
+ * Rafaela Jacobsen Braga - RA: 25004280
  * Data: 18/11/2026
  */
 import 'package:flutter/material.dart';
@@ -19,7 +20,7 @@ class DetalheOfertaPage extends StatelessWidget {
   final bool ehDoacao;
   final String nomeOfertante;
   final String emojiOfertante;
-  final double avaliacaoOfertante;
+  final double? avaliacaoOfertante;
   final int totalAvaliacoes;
   final bool mostrarInteresse;
   final VoidCallback? onTenhoInteresse;
@@ -59,7 +60,7 @@ class DetalheOfertaPage extends StatelessWidget {
       distanciaKm.toStringAsFixed(1).replaceAll('.', ',');
 
   String get avaliacaoFormatada =>
-      avaliacaoOfertante.toStringAsFixed(1).replaceAll('.', ',');
+      avaliacaoOfertante?.toStringAsFixed(1).replaceAll('.', ',') ?? '';
 
   void _tenhoInteresse(BuildContext context) {
     if (onTenhoInteresse != null) {
@@ -168,7 +169,10 @@ class DetalheOfertaPage extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 9,
+                ),
                 decoration: BoxDecoration(
                   color: fundoClaro,
                   borderRadius: BorderRadius.circular(20),
@@ -269,14 +273,17 @@ class DetalheOfertaPage extends StatelessWidget {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Text(
-                    '★★★★★',
-                    style: TextStyle(fontSize: 15, color: Color(0xFFF5A623)),
-                  ),
-                  const SizedBox(width: 8),
+                  if (avaliacaoOfertante != null)
+                    const Text(
+                      '★★★★★',
+                      style: TextStyle(fontSize: 15, color: Color(0xFFF5A623)),
+                    ),
+                  if (avaliacaoOfertante != null) const SizedBox(width: 8),
                   Flexible(
                     child: Text(
-                      '$avaliacaoFormatada · $totalAvaliacoes avaliações',
+                      avaliacaoOfertante == null
+                          ? 'Sem avaliações'
+                          : '$avaliacaoFormatada · $totalAvaliacoes avaliações',
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 14, color: cinza),
                     ),

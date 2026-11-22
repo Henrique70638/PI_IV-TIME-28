@@ -1,7 +1,8 @@
 /*
- * Autor: Henrique Leite de Camargo
- * RA: 25005997
- * Data: 18/11/2026
+ * Autores:
+ * Henrique Leite de Camargo - RA: 25005997
+ * Rafaela Jacobsen Braga - RA: 25004280
+ * Data original: 18/11/2026
  */
 
 import { Request, Response } from 'express';
@@ -13,10 +14,12 @@ import {
 } from '../repositories/conversasRepositorio';
 import { mensagemPublica, participa } from './formatadores';
 import { lerObjectId, lerTextoMensagem } from './validacoes';
+import { usuarioLogado } from '../../../shared/autenticacao';
 
 export async function enviarMensagem(req: Request, res: Response) {
+  // Nunca aceitar autorId informado no corpo da mensagem.
+  const autorId = usuarioLogado(res);
   const matchId = lerObjectId(req.params.matchId, 'matchId');
-  const autorId = lerObjectId(req.body?.autorId, 'autorId');
   const texto = lerTextoMensagem(req.body?.texto);
 
   const match = await buscarMatch(matchId);

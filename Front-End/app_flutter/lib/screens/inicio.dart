@@ -4,8 +4,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/busca_excedentes_api.dart';
 import '../services/conexao_service.dart';
+import '../services/catalogo_produtos.dart';
 import '../services/sessao.dart';
 import 'conexao_confirmada.dart';
+import 'editar_perfil.dart';
 import 'conversas.dart';
 import 'perfil.dart';
 import 'publicar.dart';
@@ -43,8 +45,12 @@ class ExcedenteCult {
     final modalidade = dados['modalidade'];
     final categoria = dados['categoria'];
     final unidade = dados['unidade'];
-    if (nome is! String || quantidade is! num || distancia is! num ||
-        modalidade is! String || categoria is! String || unidade is! String ||
+    if (nome is! String ||
+        quantidade is! num ||
+        distancia is! num ||
+        modalidade is! String ||
+        categoria is! String ||
+        unidade is! String ||
         !['doacao', 'venda'].contains(modalidade)) {
       throw const FormatException('Excedente sem os campos obrigatórios.');
     }
@@ -56,13 +62,7 @@ class ExcedenteCult {
       'mudas' => 'Plantas',
       _ => 'Outros',
     };
-    final emoji = switch (categoria) {
-      'frutas' => '🍎',
-      'verduras' => '🥬',
-      'legumes' => '🥕',
-      'mudas' => '🪴',
-      _ => '🌱',
-    };
+    final emoji = CatalogoProdutos.ilustracao(nome, categoria);
     final numero = quantidade.toDouble();
     final valorQuantidade = numero == numero.truncateToDouble()
         ? numero.toInt().toString()
@@ -83,8 +83,8 @@ class ExcedenteCult {
       categoria: categoriaExibida,
       emoji: emoji,
       tipo: modalidade == 'doacao' ? TipoOferta.doacao : TipoOferta.venda,
-      corInicial: const Color(0xFFE6EFD9),
-      corFinal: const Color(0xFFC8DBAA),
+      corInicial: CatalogoProdutos.fundo(categoria),
+      corFinal: CatalogoProdutos.fundo(categoria),
     );
   }
 }
@@ -170,14 +170,20 @@ class _InicioPageState extends State<InicioPage> {
   static const Color textoEscuro = Color(0xFF20251F);
 
   // Usuários autenticados veem ofertas do banco; prévias sem login seguem em demo.
-  bool get _usarApi => Sessao.logado || const bool.fromEnvironment('CULT_USAR_API');
-  static const String _latitudeConfigurada = String.fromEnvironment('CULT_LATITUDE');
-  static const String _longitudeConfigurada = String.fromEnvironment('CULT_LONGITUDE');
+  bool get _usarApi =>
+      Sessao.logado || const bool.fromEnvironment('CULT_USAR_API');
+  static const String _latitudeConfigurada = String.fromEnvironment(
+    'CULT_LATITUDE',
+  );
+  static const String _longitudeConfigurada = String.fromEnvironment(
+    'CULT_LONGITUDE',
+  );
   static const bool _apiDemonstracao = bool.fromEnvironment('CULT_API_DEMO');
   final BuscaExcedentesApi _api = BuscaExcedentesApi();
   List<ExcedenteCult> _excedentesApi = [];
   bool _carregando = false;
   bool _enviandoInteresse = false;
+  bool _mostrarTodasOfertas = false;
   String? _erroApi;
   int _versaoConsulta = 0;
   Timer? _debounceBusca;
@@ -215,9 +221,13 @@ class _InicioPageState extends State<InicioPage> {
     final versao = ++_versaoConsulta;
     final latitude = double.tryParse(_latitudeConfigurada);
     final longitude = double.tryParse(_longitudeConfigurada);
-    if (!Sessao.logado && (latitude == null || longitude == null ||
-        latitude < -90 || latitude > 90 ||
-        longitude < -180 || longitude > 180)) {
+    if (!Sessao.logado &&
+        (latitude == null ||
+            longitude == null ||
+            latitude < -90 ||
+            latitude > 90 ||
+            longitude < -180 ||
+            longitude > 180)) {
       setState(() {
         _carregando = false;
         _erroApi = 'Configure coordenadas autorizadas para a busca.';
@@ -230,14 +240,16 @@ class _InicioPageState extends State<InicioPage> {
       _erroApi = null;
     });
     try {
-      final resultados = await _api.buscar(FiltrosExcedentesApi(
-        latitude: Sessao.logado ? null : latitude,
-        longitude: Sessao.logado ? null : longitude,
-        raioKm: _raioKm,
-        categoria: _categoria,
-        modalidade: _tipo,
-        busca: _buscaController.text,
-      ));
+      final resultados = await _api.buscar(
+        FiltrosExcedentesApi(
+          latitude: Sessao.logado ? null : latitude,
+          longitude: Sessao.logado ? null : longitude,
+          raioKm: _raioKm,
+          categoria: _categoria,
+          modalidade: _tipo,
+          busca: _buscaController.text,
+        ),
+      );
       final produtos = resultados.map(ExcedenteCult.fromApi).toList();
       if (!mounted || versao != _versaoConsulta) return;
       setState(() {
@@ -260,7 +272,10 @@ class _InicioPageState extends State<InicioPage> {
     setState(() {});
     if (!_usarApi) return;
     _debounceBusca?.cancel();
-    _debounceBusca = Timer(const Duration(milliseconds: 350), _carregarExcedentes);
+    _debounceBusca = Timer(
+      const Duration(milliseconds: 350),
+      _carregarExcedentes,
+    );
   }
 
   @override
@@ -283,7 +298,8 @@ class _InicioPageState extends State<InicioPage> {
       final correspondeCategoria =
           _categoria == 'Todas' || produto.categoria == _categoria;
       final correspondeRaio = produto.distanciaKm <= _raioKm;
-      final correspondeTipo = _tipo == 'Todos' ||
+      final correspondeTipo =
+          _tipo == 'Todos' ||
           (_tipo == 'Doação' && produto.tipo == TipoOferta.doacao) ||
           (_tipo == 'Venda' && produto.tipo == TipoOferta.venda);
       return correspondeBusca &&
@@ -300,54 +316,21 @@ class _InicioPageState extends State<InicioPage> {
   }
 
   Future<void> _editarLocalizacao() async {
-    if (_usarApi) {
-      _mensagem('A busca usa a localização cadastrada na sua conta.');
-      return;
-    }
-    String localTemporario = _localizacao;
-    final novaLocalizacao = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Sua localização'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextFormField(
-              initialValue: localTemporario,
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Bairro ou região',
-                prefixIcon: Icon(Icons.location_on_outlined),
-              ),
-              onChanged: (valor) => localTemporario = valor,
-              onFieldSubmitted: (valor) => Navigator.pop(dialogContext, valor),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Localização ilustrativa. As distâncias serão atualizadas '
-              'quando o aplicativo estiver conectado ao backend.',
-              style: TextStyle(fontSize: 12, color: cinza),
-            ),
-          ],
+    if (Sessao.logado) {
+      final alterou = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => const EditarPerfilPage(editarLocalizacao: true),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, localTemporario),
-            child: const Text('Salvar', style: TextStyle(color: verde)),
-          ),
-        ],
-      ),
-    );
-    if (!mounted || novaLocalizacao == null || novaLocalizacao.trim().isEmpty) {
+      );
+      if (!mounted || alterou != true) return;
+      setState(() {
+        _localizacao = Sessao.usuario?['bairro']?.toString() ?? _localizacao;
+        _mostrarTodasOfertas = false;
+      });
+      await _carregarExcedentes();
       return;
     }
-    setState(() => _localizacao = novaLocalizacao.trim());
+    _mensagem('Entre na sua conta para alterar sua localização.');
   }
 
   Future<void> _abrirFiltros() async {
@@ -398,9 +381,8 @@ class _InicioPageState extends State<InicioPage> {
                           color: raioTemporario == raio ? verdeEscuro : cinza,
                           fontWeight: FontWeight.w700,
                         ),
-                        onSelected: (_) => atualizarModal(
-                          () => raioTemporario = raio,
-                        ),
+                        onSelected: (_) =>
+                            atualizarModal(() => raioTemporario = raio),
                       );
                     }).toList(),
                   ),
@@ -421,9 +403,8 @@ class _InicioPageState extends State<InicioPage> {
                           color: tipoTemporario == tipo ? verdeEscuro : cinza,
                           fontWeight: FontWeight.w700,
                         ),
-                        onSelected: (_) => atualizarModal(
-                          () => tipoTemporario = tipo,
-                        ),
+                        onSelected: (_) =>
+                            atualizarModal(() => tipoTemporario = tipo),
                       );
                     }).toList(),
                   ),
@@ -479,22 +460,25 @@ class _InicioPageState extends State<InicioPage> {
         categoria: _categoria == 'Todas' ? null : _categoria,
       );
       if (!mounted) return;
-      await Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) => ConexaoConfirmadaPage(
-          nomeOfertante: conexao.nomeOfertante,
-          nomeProduto: conexao.nomeProduto,
-          quantidade: conexao.quantidadeFormatada,
-          localizacao: conexao.localizacao,
-          distanciaKm: conexao.distanciaKm,
-          ehDoacao: conexao.ehDoacao,
-          emojiProduto: produto.emoji,
-          avaliacaoOfertante: conexao.avaliacaoOfertante,
-          totalAvaliacoes: conexao.totalAvaliacoes,
-          onVoltarBusca: () => Navigator.of(context).pop(),
-          onAbrirChat: () => _mensagem(
-            'Chat deste match ainda precisa ser conectado ao módulo Conversas.'),
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ConexaoConfirmadaPage(
+            nomeOfertante: conexao.nomeOfertante,
+            nomeProduto: conexao.nomeProduto,
+            quantidade: conexao.quantidadeFormatada,
+            localizacao: conexao.localizacao,
+            distanciaKm: conexao.distanciaKm,
+            ehDoacao: conexao.ehDoacao,
+            emojiProduto: produto.emoji,
+            avaliacaoOfertante: conexao.avaliacaoOfertante,
+            totalAvaliacoes: conexao.totalAvaliacoes,
+            onVoltarBusca: () => Navigator.of(context).pop(),
+            onAbrirChat: () => _mensagem(
+              'Chat deste match ainda precisa ser conectado ao módulo Conversas.',
+            ),
+          ),
         ),
-      ));
+      );
     } on ErroConexao catch (erro) {
       if (mounted) _mensagem(erro.mensagem);
     } finally {
@@ -580,6 +564,41 @@ class _InicioPageState extends State<InicioPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // Reduz repetição visual por nome sem apagar ofertas distintas do banco.
+  List<ExcedenteCult> _ofertasVisiveis(List<ExcedenteCult> produtos) {
+    if (_mostrarTodasOfertas) return produtos;
+    final vistos = <String>{};
+    return produtos
+        .where(
+          (p) => vistos.add('${p.categoria}|${p.nome.toLowerCase().trim()}'),
+        )
+        .toList();
+  }
+
+  Widget _expandirOfertas(int total, int exibidas) {
+    if (total == exibidas) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '$total ofertas encontradas · $exibidas produtos diferentes',
+              style: const TextStyle(fontSize: 12, color: cinza),
+            ),
+          ),
+          TextButton(
+            onPressed: () => setState(() => _mostrarTodasOfertas = true),
+            child: const Text(
+              'Ver todas',
+              style: TextStyle(color: verde, fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -773,7 +792,11 @@ class _InicioPageState extends State<InicioPage> {
                   child: const SizedBox(
                     width: 58,
                     height: 58,
-                    child: Icon(Icons.settings_outlined, color: Colors.white, size: 26),
+                    child: Icon(
+                      Icons.settings_outlined,
+                      color: Colors.white,
+                      size: 26,
+                    ),
                   ),
                 ),
               ),
@@ -901,8 +924,10 @@ class _InicioPageState extends State<InicioPage> {
     if (!_usarApi) {
       return const Padding(
         padding: EdgeInsets.fromLTRB(22, 0, 22, 8),
-        child: Text('Produtos de demonstração',
-            style: TextStyle(fontSize: 12, color: cinza)),
+        child: Text(
+          'Produtos de demonstração',
+          style: TextStyle(fontSize: 12, color: cinza),
+        ),
       );
     }
     if (_carregando) {
@@ -914,22 +939,26 @@ class _InicioPageState extends State<InicioPage> {
     if (_erroApi != null) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
-        child: Column(children: [
-          const Icon(Icons.wifi_off_outlined, size: 35, color: cinza),
-          const SizedBox(height: 8),
-          Text(_erroApi!, textAlign: TextAlign.center),
-          TextButton(
-            onPressed: _carregarExcedentes,
-            child: const Text('Tentar novamente'),
-          ),
-        ]),
+        child: Column(
+          children: [
+            const Icon(Icons.wifi_off_outlined, size: 35, color: cinza),
+            const SizedBox(height: 8),
+            Text(_erroApi!, textAlign: TextAlign.center),
+            TextButton(
+              onPressed: _carregarExcedentes,
+              child: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
       );
     }
     if (_apiDemonstracao) {
       return const Padding(
         padding: EdgeInsets.fromLTRB(22, 0, 22, 8),
-        child: Text('Resposta de API demonstrativa (sem MongoDB)',
-            style: TextStyle(fontSize: 12, color: cinza)),
+        child: Text(
+          'Resposta de API demonstrativa (sem MongoDB)',
+          style: TextStyle(fontSize: 12, color: cinza),
+        ),
       );
     }
     return const SizedBox.shrink();
@@ -949,24 +978,22 @@ class _InicioPageState extends State<InicioPage> {
       'Publicar' => const PublicarPage(),
       'Conversas' => const ConversasPage(),
       'Perfil' => PerfilPage(
-          usuario: UsuarioPerfil(
-            nome: usuario?['nome']?.toString() ?? 'Usuário de demonstração',
-            email: usuario?['email']?.toString() ?? 'Sem autenticação',
-            tipoUsuario: switch (usuario?['perfil']) {
-              'ofertante' => 'Ofertante',
-              'ambos' => 'Ambos',
-              _ => 'Interessado',
-            },
-            localizacao: usuario?['bairro']?.toString() ?? 'Jardim das Flores',
-          ),
+        usuario: UsuarioPerfil(
+          nome: usuario?['nome']?.toString() ?? 'Usuário de demonstração',
+          email: usuario?['email']?.toString() ?? 'Sem autenticação',
+          tipoUsuario: switch (usuario?['perfil']) {
+            'ofertante' => 'Ofertante',
+            'ambos' => 'Ambos',
+            _ => 'Interessado',
+          },
+          localizacao: usuario?['bairro']?.toString() ?? 'Jardim das Flores',
         ),
+      ),
       _ => null,
     };
 
     if (pagina == null) return;
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => pagina),
-    );
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => pagina));
   }
 
   Widget _itemNavegacao({
@@ -984,11 +1011,7 @@ class _InicioPageState extends State<InicioPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icone,
-                size: 28,
-                color: selecionado ? verde : Colors.grey,
-              ),
+              Icon(icone, size: 28, color: selecionado ? verde : Colors.grey),
               const SizedBox(height: 5),
               Text(
                 texto,
@@ -1067,6 +1090,7 @@ class _InicioPageState extends State<InicioPage> {
   @override
   Widget build(BuildContext context) {
     final produtos = _filtrados;
+    final visiveis = _ofertasVisiveis(produtos);
     return Scaffold(
       backgroundColor: fundo,
       body: SafeArea(
@@ -1078,6 +1102,10 @@ class _InicioPageState extends State<InicioPage> {
             SliverToBoxAdapter(child: _filtrosCategoria()),
             SliverToBoxAdapter(child: _tituloLista()),
             SliverToBoxAdapter(child: _situacaoApi()),
+            if (!_carregando && _erroApi == null && produtos.isNotEmpty)
+              SliverToBoxAdapter(
+                child: _expandirOfertas(produtos.length, visiveis.length),
+              ),
             if (!_carregando && _erroApi == null && produtos.isEmpty)
               SliverToBoxAdapter(child: _semResultados())
             else if (!_carregando && _erroApi == null)
@@ -1085,8 +1113,8 @@ class _InicioPageState extends State<InicioPage> {
                 padding: const EdgeInsets.fromLTRB(22, 0, 22, 24),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => _cardProduto(produtos[index]),
-                    childCount: produtos.length,
+                    (context, index) => _cardProduto(visiveis[index]),
+                    childCount: visiveis.length,
                   ),
                 ),
               ),

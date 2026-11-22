@@ -1,7 +1,10 @@
-//Autora: Laura Lugli Fonseca Pereira RA: 25000739
+// Autores: Laura Lugli Fonseca Pereira - RA: 25000739
+// Rafaela Jacobsen Braga - RA: 25004280
 import 'package:flutter/material.dart';
 import '../services/excedente_service.dart';
 import '../services/sessao.dart';
+import '../services/catalogo_produtos.dart';
+import 'editar_perfil.dart';
 
 // cores da identidade visual
 // 0xFF diz que a cor é 100% opaca
@@ -30,16 +33,16 @@ class PublicarPage extends StatefulWidget {
 }
 
 class _PublicarPageState extends State<PublicarPage> {
-  //por enquanto as fotos são emojis, depois troca pelas imagens de verdade
-  final List<String> _fotos = ['🥭'];
+  // A galeria mostra ilustrações; não preenche anúncios automaticamente.
+  final List<String> _fotos = [];
 
-  //guarda o nome do produto, já começa preenchido
-  final _produtoController = TextEditingController(text: 'Manga Tommy');
+  // Produto e quantidade começam vazios para evitar publicações de teste involuntárias.
+  final _produtoController = TextEditingController();
 
   //categoria marcada, começa em frutas
   Categoria _categoria = Categoria.frutas;
 
-  final _quantidadeController = TextEditingController(text: '5');
+  final _quantidadeController = TextEditingController();
 
   //a chave é o valor que vai pro banco e o valor é o que aparece na tela
   final Map<String, String> _unidades = {
@@ -62,8 +65,8 @@ class _PublicarPageState extends State<PublicarPage> {
   //modalidade marcada, começa em doação
   Modalidade _modalidade = Modalidade.doacao;
 
-  //bairro de quem esta logado, vem do cadastro
-  final String _local = Sessao.usuario?['bairro'] ?? '';
+  // A publicação usa a localização autenticada, não uma coordenada inventada.
+  String get _local => Sessao.usuario?['bairro']?.toString() ?? '';
 
   //fica true enquanto espera a api responder
   bool _enviando = false;
@@ -88,10 +91,6 @@ class _PublicarPageState extends State<PublicarPage> {
     );
 
     //cada if confere uma coisa, se der erro mostra a mensagem e para aqui
-    if (_fotos.isEmpty) {
-      _mostrarMensagem('Adicione pelo menos uma foto.');
-      return;
-    }
     if (_produtoController.text.trim().isEmpty) {
       _mostrarMensagem('Digite o nome do produto.');
       return;
@@ -106,6 +105,7 @@ class _PublicarPageState extends State<PublicarPage> {
     //trava o botão enquanto envia
     setState(() => _enviando = true);
 
+    // Ilustrações são apenas apresentação; a API não recebe emojis como fotos.
     //manda pra api, os nomes são os mesmos que o backend espera
     final erro = await ExcedenteService.publicar({
       'produto': _produtoController.text.trim(),
@@ -149,8 +149,12 @@ class _PublicarPageState extends State<PublicarPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _rotulo('Fotos'),
+                    _rotulo('Ilustração do produto'),
                     _fotosProduto(),
+                    const Text(
+                      'Escolha um desenho da galeria. Não substitui uma foto real.',
+                      style: TextStyle(color: corCinza, fontSize: 12),
+                    ),
                     _rotulo('Produto'),
                     _campoProduto(),
                     _rotulo('Categoria'),
@@ -301,9 +305,148 @@ class _PublicarPageState extends State<PublicarPage> {
     );
   }
 
+  Future<void> _abrirGaleria() async {
+    final escolhido = await showModalBottomSheet<ProdutoCatalogo>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: corFundo,
+      builder: (context) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 10, 22, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Galeria de frutas e verduras',
+                style: TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800,
+                  color: corTexto,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'Ilustrações prontas para a demonstração do CULT+.',
+                style: TextStyle(color: corCinza, fontSize: 13),
+              ),
+              const SizedBox(height: 15),
+              Flexible(
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 0.93,
+                  ),
+                  itemCount: CatalogoProdutos.opcoes.length + 1,
+                  itemBuilder: (context, i) {
+                    if (i == 0) {
+                      return InkWell(
+                        onTap: () => Navigator.pop(
+                          context,
+                          const ProdutoCatalogo(
+                            'Sem ilustração',
+                            'nenhuma',
+                            '',
+                          ),
+                        ),
+                        borderRadius: BorderRadius.circular(17),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8E9E7),
+                            borderRadius: BorderRadius.circular(17),
+                          ),
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.block_outlined,
+                                size: 34,
+                                color: Color(0xFF777D77),
+                              ),
+                              SizedBox(height: 7),
+                              Text(
+                                'Sem ilustração',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    final produto = CatalogoProdutos.opcoes[i - 1];
+                    return InkWell(
+                      onTap: () => Navigator.pop(context, produto),
+                      borderRadius: BorderRadius.circular(17),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: CatalogoProdutos.fundo(produto.categoria),
+                          borderRadius: BorderRadius.circular(17),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              produto.emoji,
+                              style: const TextStyle(fontSize: 35),
+                            ),
+                            const SizedBox(height: 7),
+                            Text(
+                              produto.nome,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted || escolhido == null) return;
+    if (escolhido.categoria == 'nenhuma') {
+      setState(() => _fotos.clear());
+      return;
+    }
+    setState(() {
+      // O desenho acompanha o produto selecionado, sem fingir upload de imagem.
+      _fotos
+        ..clear()
+        ..add(escolhido.emoji);
+      _produtoController.text = escolhido.nome;
+      _categoria = Categoria.values.firstWhere(
+        (c) => c.name == escolhido.categoria,
+      );
+    });
+  }
+
+  Future<void> _alterarLocalizacao() async {
+    final alterou = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => const EditarPerfilPage(editarLocalizacao: true),
+      ),
+    );
+    if (!mounted) return;
+    if (alterou == true) setState(() {});
+  }
+
   Widget _botaoAdicionarFoto() {
     return GestureDetector(
-      onTap: () => _mostrarMensagem('Seleção de fotos ainda não implementada.'),
+      onTap: _abrirGaleria,
       //CustomPaint desenha a borda tracejada, o Flutter não tem pronta
       child: CustomPaint(
         painter: _BordaTracejada(),
@@ -522,9 +665,7 @@ class _PublicarPageState extends State<PublicarPage> {
             ),
           ),
           GestureDetector(
-            onTap: () => _mostrarMensagem(
-              'Troca de localização ainda não implementada.',
-            ),
+            onTap: _alterarLocalizacao,
             child: const Text(
               'Alterar',
               style: TextStyle(

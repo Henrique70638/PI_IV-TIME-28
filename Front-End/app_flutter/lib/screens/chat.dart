@@ -1,11 +1,13 @@
 /*
- * Autor: Henrique Leite de Camargo
- * RA: 25005997
+ * Autores:
+ * Henrique Leite de Camargo - RA: 25005997
+ * Rafaela Jacobsen Braga - RA: 25004280
  * Data: 18/11/2026
  */
 import 'package:flutter/material.dart';
 
 import 'detalhe_oferta.dart';
+import '../services/conversas_service.dart';
 
 class MensagemChat {
   final String texto;
@@ -22,7 +24,9 @@ class MensagemChat {
 class ChatPage extends StatefulWidget {
   final String nomeOutro;
   final String papelOutro;
-  final double avaliacaoOutro;
+  final double? avaliacaoOutro;
+  final String? matchId;
+  final ConversasService? api;
   final String emojiAvatar;
   final String emojiProduto;
   final String produto;
@@ -34,41 +38,18 @@ class ChatPage extends StatefulWidget {
 
   const ChatPage({
     super.key,
-    this.nomeOutro = 'Roberto C.',
-    this.papelOutro = 'Ofertante',
-    this.avaliacaoOutro = 4.8,
-    this.emojiAvatar = '🧑🏽‍🌾',
-    this.emojiProduto = '🥭',
-    this.produto = 'Manga Tommy',
-    this.detalheOferta = '🎁 Doação · ~5 kg · 1,2 km',
-    this.avisoConexao = '🤝 Conexão confirmada · combinem a retirada ou entrega',
-    this.mensagensIniciais = const [
-      MensagemChat(
-        texto: 'Oi, Roberto! Tenho interesse nas mangas 😊',
-        minha: true,
-        hora: '9:38',
-      ),
-      MensagemChat(
-        texto: 'Oi! Que bom! Colhi hoje cedo, ainda tem bastante.',
-        minha: false,
-        hora: '9:39',
-      ),
-      MensagemChat(
-        texto: 'Posso retirar amanhã às 9h, aí na sua casa?',
-        minha: true,
-        hora: '9:40',
-      ),
-      MensagemChat(
-        texto: 'Pode sim! Te envio o endereço certinho por aqui.',
-        minha: false,
-        hora: '9:41',
-      ),
-      MensagemChat(
-        texto: 'Combinado, obrigado! 🙌',
-        minha: true,
-        hora: '9:41',
-      ),
-    ],
+    this.matchId,
+    this.api,
+    this.nomeOutro = 'Usuário',
+    this.papelOutro = 'Participante',
+    this.avaliacaoOutro,
+    this.emojiAvatar = '👤',
+    this.emojiProduto = '🌱',
+    this.produto = 'Oferta',
+    this.detalheOferta = 'Conexão confirmada',
+    this.avisoConexao =
+        '🤝 Conexão confirmada · combinem a retirada ou entrega',
+    this.mensagensIniciais = const [],
     this.onEnviarMensagem,
     this.onVerOferta,
   });
@@ -88,12 +69,25 @@ class _ChatPageState extends State<ChatPage> {
 
   final TextEditingController _campoController = TextEditingController();
   final ScrollController _rolagemController = ScrollController();
-  late final List<MensagemChat> _mensagens;
+  late List<MensagemChat> _mensagens;
+  bool _carregando = false;
+  bool _enviando = false;
+  bool _permiteEnvio = false;
+  String? _erro;
+  int _versao = 0;
 
   @override
   void initState() {
     super.initState();
-    _mensagens = List<MensagemChat>.of(widget.mensagensIniciais);
+    _mensagens = widget.matchId == null
+        ? List<MensagemChat>.of(widget.mensagensIniciais)
+        : [];
+    _permiteEnvio = widget.matchId == null;
+    if (widget.matchId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _carregar();
+      });
+    }
   }
 
   @override
@@ -109,18 +103,12 @@ class _ChatPageState extends State<ChatPage> {
     return '${agora.hour}:$minuto';
   }
 
-  void _enviar() {
-    final texto = _campoController.text.trim();
-    if (texto.isEmpty) return;
+  String _horaMensagem(DateTime data) =>
+      '${data.hour.toString().padLeft(2, '0')}:${data.minute.toString().padLeft(2, '0')}';
 
-    setState(() {
-      _mensagens.add(MensagemChat(texto: texto, minha: true, hora: _horaAgora()));
-    });
-    _campoController.clear();
-    widget.onEnviarMensagem?.call(texto);
-
+  void _rolarFim() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_rolagemController.hasClients) return;
+      if (!mounted || !_rolagemController.hasClients) return;
       _rolagemController.animateTo(
         _rolagemController.position.maxScrollExtent,
         duration: const Duration(milliseconds: 220),
@@ -129,8 +117,99 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
+  Future<void> _carregar() async {
+    final id = widget.matchId;
+    if (id == null) return;
+    final versao = ++_versao;
+    setState(() {
+      _carregando = true;
+      _erro = null;
+    });
+    try {
+      final dados = await (widget.api ?? ConversasService()).obter(id);
+      if (!mounted || versao != _versao) return;
+      setState(() {
+        _mensagens = dados.mensagens
+            .map(
+              (m) => MensagemChat(
+                texto: m.texto,
+                minha: m.minha,
+                hora: _horaMensagem(m.criadoEm),
+              ),
+            )
+            .toList();
+        _permiteEnvio = dados.conversa.status == 'conectado';
+        _carregando = false;
+      });
+      _rolarFim();
+    } catch (erro) {
+      if (!mounted || versao != _versao) return;
+      setState(() {
+        _erro = erro.toString();
+        _carregando = false;
+      });
+    }
+  }
+
+  Future<void> _enviar() async {
+    final texto = _campoController.text.trim();
+    if (texto.isEmpty || _enviando || _carregando || !_permiteEnvio) return;
+    final id = widget.matchId;
+    if (id == null) {
+      if (widget.onEnviarMensagem == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Abra uma conexão real para enviar mensagens.'),
+          ),
+        );
+        return;
+      }
+      setState(() {
+        _mensagens.add(
+          MensagemChat(texto: texto, minha: true, hora: _horaAgora()),
+        );
+      });
+      _campoController.clear();
+      widget.onEnviarMensagem?.call(texto);
+      _rolarFim();
+      return;
+    }
+    setState(() {
+      _enviando = true;
+    });
+    try {
+      // Só mostra como enviada depois que o servidor confirmou a gravação.
+      final salva = await (widget.api ?? ConversasService()).enviar(id, texto);
+      if (!mounted) return;
+      setState(() {
+        _mensagens.add(
+          MensagemChat(
+            texto: salva.texto,
+            minha: salva.minha,
+            hora: _horaMensagem(salva.criadoEm),
+          ),
+        );
+        _campoController.clear();
+      });
+      _rolarFim();
+    } catch (erro) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(erro.toString())));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _enviando = false;
+        });
+      }
+    }
+  }
+
   Widget _cabecalho(BuildContext context) {
-    final avaliacao = widget.avaliacaoOutro.toStringAsFixed(1).replaceAll('.', ',');
+    final avaliacao = widget.avaliacaoOutro
+        ?.toStringAsFixed(1)
+        .replaceAll('.', ',');
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
@@ -163,7 +242,10 @@ class _ChatPageState extends State<ChatPage> {
               color: fundoAviso,
               shape: BoxShape.circle,
             ),
-            child: Text(widget.emojiAvatar, style: const TextStyle(fontSize: 24)),
+            child: Text(
+              widget.emojiAvatar,
+              style: const TextStyle(fontSize: 24),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -181,7 +263,9 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 ),
                 Text(
-                  '${widget.papelOutro} · ★ $avaliacao',
+                  avaliacao == null
+                      ? widget.papelOutro
+                      : '${widget.papelOutro} · ★ $avaliacao',
                   style: const TextStyle(fontSize: 13, color: cinza),
                 ),
               ],
@@ -238,7 +322,10 @@ class _ChatPageState extends State<ChatPage> {
               color: const Color(0xFFFFD66B),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text(widget.emojiProduto, style: const TextStyle(fontSize: 26)),
+            child: Text(
+              widget.emojiProduto,
+              style: const TextStyle(fontSize: 26),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -360,7 +447,9 @@ class _ChatPageState extends State<ChatPage> {
             child: TextField(
               controller: _campoController,
               textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _enviar(),
+              onSubmitted: (_) {
+                _enviar();
+              },
               maxLength: 1000,
               maxLines: null,
               decoration: InputDecoration(
@@ -385,7 +474,11 @@ class _ChatPageState extends State<ChatPage> {
             color: laranja,
             shape: const CircleBorder(),
             child: InkWell(
-              onTap: _enviar,
+              onTap: _enviando
+                  ? null
+                  : () {
+                      _enviar();
+                    },
               customBorder: const CircleBorder(),
               child: const SizedBox(
                 width: 52,
@@ -408,18 +501,48 @@ class _ChatPageState extends State<ChatPage> {
           children: [
             _cabecalho(context),
             Expanded(
-              child: ListView(
-                controller: _rolagemController,
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                children: [
-                  _cartaoOferta(),
-                  const SizedBox(height: 12),
-                  _avisoConexao(),
-                  for (final mensagem in _mensagens) _balao(mensagem),
-                ],
-              ),
+              child: _carregando && _mensagens.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : _erro != null && _mensagens.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_erro!, textAlign: TextAlign.center),
+                          TextButton(
+                            onPressed: _carregar,
+                            child: const Text('Tentar novamente'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _carregar,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        controller: _rolagemController,
+                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                        children: [
+                          _cartaoOferta(),
+                          const SizedBox(height: 12),
+                          _avisoConexao(),
+                          for (final mensagem in _mensagens) _balao(mensagem),
+                        ],
+                      ),
+                    ),
             ),
-            _campoDeEnvio(),
+            if (_erro != null && _mensagens.isNotEmpty)
+              TextButton(
+                onPressed: _carregar,
+                child: Text('Atualizar mensagens: $_erro'),
+              ),
+            if (_permiteEnvio)
+              _campoDeEnvio()
+            else if (!_carregando && _erro == null)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('Esta conversa foi encerrada.'),
+              ),
           ],
         ),
       ),
