@@ -9,6 +9,7 @@ import bcrypt from 'bcryptjs';
 import { ErroApp } from '../../../shared/erros';
 import { inserirUsuario } from '../repositories/usuariosRepositorio';
 import { DadosCadastro, Perfil, UsuarioPublico } from '../types/usuario';
+import { verificarNoServidor } from '../../../shared/servidorVerificacao';
 
 const PERFIS: Perfil[] = ['ofertante', 'interessado', 'ambos'];
 const REGEX_EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -42,6 +43,8 @@ export function validarCadastro(corpo: Record<string, unknown>): DadosCadastro {
 
 export async function cadastrar(req: Request, res: Response) {
   const dados = validarCadastro(req.body ?? {});
+  //Laura: confere os dados no servidor java de verificacao antes de salvar
+  await verificarNoServidor(dados);
   const senhaHash = await bcrypt.hash(dados.senha, 10);
 
   const usuario = await inserirUsuario({
