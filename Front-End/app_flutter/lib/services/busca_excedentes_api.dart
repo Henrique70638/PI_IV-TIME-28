@@ -1,7 +1,9 @@
 // Autor: Rafaela Jacobsen Braga - RA: 25004280
+//Autora: Laura Lugli Fonseca Pereira RA:25000739
 // Cliente HTTP da busca de excedentes do CULT+ (iOS/Android/macOS).
 import 'dart:convert';
-import 'dart:io';
+
+import 'package:http/http.dart' as http;
 
 import 'api.dart';
 import 'sessao.dart';
@@ -68,21 +70,18 @@ class BuscaExcedentesApi {
               : const String.fromEnvironment('CULT_API_URL'),
         );
 
+    //usa o pacote http que funciona no celular, no computador e no navegador
   Future<RespostaHttpBusca> _buscarHttp(Uri uri) async {
-    final cliente = HttpClient()..connectionTimeout = tempoLimite;
-    try {
-      final requisicao = await cliente.getUrl(uri).timeout(tempoLimite);
-      // A API obtém a localização cadastrada usando a sessão verificada.
-      final token = Sessao.token;
-      if (token != null && token.isNotEmpty) {
-        requisicao.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
-      }
-      final resposta = await requisicao.close().timeout(tempoLimite);
-      final corpo = await resposta.transform(utf8.decoder).join().timeout(tempoLimite);
-      return RespostaHttpBusca(resposta.statusCode, corpo);
-    } finally {
-      cliente.close(force: true);
-    }
+    final token = Sessao.token;
+    final resposta = await http.get(
+      uri,
+      headers: {
+        //a api acha a localizacao de quem esta logado pelo token
+        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+      },
+    ).timeout(tempoLimite);
+    //bodyBytes com utf8 pra nao estragar os acentos
+    return RespostaHttpBusca(resposta.statusCode, utf8.decode(resposta.bodyBytes));
   }
 
   Future<List<Map<String, dynamic>>> buscar(FiltrosExcedentesApi filtros) async {
@@ -97,7 +96,8 @@ class BuscaExcedentesApi {
               : transporte(uri))
           .timeout(tempoLimite);
 
-      if (resposta.status != HttpStatus.ok) {
+      //200 e o codigo de deu certo
+      if (resposta.status != 200) {
         throw ErroBuscaExcedentes(
           resposta.status == 401
               ? 'Faça login para consultar ofertas próximas.'
@@ -116,10 +116,9 @@ class BuscaExcedentesApi {
         }
         return item;
       }).toList();
-    } on SocketException {
+        //erro de conexao do pacote http
+    } on http.ClientException {
       throw const ErroBuscaExcedentes('Sem conexão com a API do CULT+.');
-    } on HttpException {
-      throw const ErroBuscaExcedentes('Falha de comunicação com o servidor.');
     } on FormatException {
       throw const ErroBuscaExcedentes('O servidor retornou dados inválidos.');
     } on ErroBuscaExcedentes {

@@ -1,5 +1,7 @@
 // Autor: Rafaela Jacobsen Braga - RA: 25004280
+//Autora: Laura Lugli Fonseca Pereira RA:25000739
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import '../services/busca_excedentes_api.dart';
@@ -24,6 +26,8 @@ class ExcedenteCult {
   final TipoOferta tipo;
   final Color corInicial;
   final Color corFinal;
+  //foto real do excedente, null quando so tem desenho
+  final String? foto;
 
   const ExcedenteCult({
     this.id,
@@ -35,6 +39,7 @@ class ExcedenteCult {
     required this.tipo,
     required this.corInicial,
     required this.corFinal,
+    this.foto,
   });
 
   // Converte o JSON retornado pela API, sem modificar os dados de demonstração.
@@ -75,6 +80,14 @@ class ExcedenteCult {
       _ => unidade,
     };
 
+    //pega a primeira foto da lista se for uma imagem de verdade
+    //os excedentes antigos de teste tem so um caminho de arquivo, esses ficam com o desenho
+    final fotos = dados['fotos'];
+    final primeira = fotos is List && fotos.isNotEmpty ? fotos.first : null;
+    final foto = primeira is String && primeira.startsWith('data:image/')
+        ? primeira
+        : null;
+
     return ExcedenteCult(
       id: dados['id'] is String ? dados['id'] as String : null,
       nome: nome,
@@ -85,6 +98,7 @@ class ExcedenteCult {
       tipo: modalidade == 'doacao' ? TipoOferta.doacao : TipoOferta.venda,
       corInicial: CatalogoProdutos.fundo(categoria),
       corFinal: CatalogoProdutos.fundo(categoria),
+      foto: foto,
     );
   }
 }
@@ -604,6 +618,22 @@ class _InicioPageState extends State<InicioPage> {
   }
 
   Widget _imagemProduto(ExcedenteCult produto, {double tamanho = 78}) {
+    //se o excedente tem foto real mostra ela no lugar do desenho
+    final foto = produto.foto;
+    if (foto != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(19),
+        child: Image.memory(
+          //tira o comeco data:image/...;base64, e transforma o texto em imagem
+          base64Decode(foto.split(',').last),
+          width: tamanho,
+          height: tamanho,
+          fit: BoxFit.cover,
+          //evita a foto piscar quando a lista atualiza
+          gaplessPlayback: true,
+        ),
+      );
+    }
     return Container(
       width: tamanho,
       height: tamanho,

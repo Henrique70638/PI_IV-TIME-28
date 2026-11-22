@@ -5,6 +5,9 @@ import '../services/excedente_service.dart';
 import '../services/sessao.dart';
 import '../services/catalogo_produtos.dart';
 import 'editar_perfil.dart';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
 
 // cores da identidade visual
 // 0xFF diz que a cor é 100% opaca
@@ -35,6 +38,12 @@ class PublicarPage extends StatefulWidget {
 class _PublicarPageState extends State<PublicarPage> {
   // A galeria mostra ilustrações; não preenche anúncios automaticamente.
   final List<String> _fotos = [];
+
+  //foto de verdade em bytes, null quando nao tem foto
+  Uint8List? _fotoBytes;
+
+  //quem abre a camera e as fotos do celular
+  final ImagePicker _picker = ImagePicker();
 
   // Produto e quantidade começam vazios para evitar publicações de teste involuntárias.
   final _produtoController = TextEditingController();
@@ -114,6 +123,9 @@ class _PublicarPageState extends State<PublicarPage> {
       'unidade': _unidade,
       'urgencia': _urgencia,
       'modalidade': _modalidade.name,
+      //manda a foto como texto, so quando tem foto
+      if (_fotoBytes != null)
+        'fotos': ['data:image/jpeg;base64,${base64Encode(_fotoBytes!)}'],
     });
 
     //a tela pode ter sido fechada enquanto esperava
@@ -149,10 +161,10 @@ class _PublicarPageState extends State<PublicarPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _rotulo('Ilustração do produto'),
+                    _rotulo('Foto do produto'),
                     _fotosProduto(),
                     const Text(
-                      'Escolha um desenho da galeria. Não substitui uma foto real.',
+                      'Tire uma foto ou escolha uma ilustração.',
                       style: TextStyle(color: corCinza, fontSize: 12),
                     ),
                     _rotulo('Produto'),
@@ -256,9 +268,48 @@ class _PublicarPageState extends State<PublicarPage> {
       spacing: 14,
       runSpacing: 14,
       children: [
+        //foto real aparece primeiro
+        if (_fotoBytes != null) _fotoReal(),
         //cria um quadradinho pra cada foto da lista
         for (int i = 0; i < _fotos.length; i++) _foto(i),
         _botaoAdicionarFoto(),
+      ],
+    );
+  }
+
+  //quadradinho com a foto de verdade e o X pra remover
+  Widget _fotoReal() {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        //corta os cantos da foto pra ficar arredondada
+        ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: Image.memory(
+            _fotoBytes!,
+            width: 100,
+            height: 100,
+            //preenche o quadrado sem esticar a foto
+            fit: BoxFit.cover,
+          ),
+        ),
+        Positioned(
+          top: -8,
+          right: -8,
+          child: GestureDetector(
+            onTap: () => setState(() => _fotoBytes = null),
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: corTexto,
+                shape: BoxShape.circle,
+                border: Border.all(color: corFundo, width: 2),
+              ),
+              child: const Icon(Icons.close, size: 15, color: Colors.white),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -303,6 +354,78 @@ class _PublicarPageState extends State<PublicarPage> {
         ),
       ],
     );
+  }
+
+  //menu com as 3 opcoes quando toca no adicionar
+  Future<void> _escolherOrigem() async {
+    final opcao = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: corFundo,
+      builder: (context) => SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Text('📸', style: TextStyle(fontSize: 24)),
+              title: const Text('Tirar foto'),
+              onTap: () => Navigator.pop(context, 'camera'),
+            ),
+            ListTile(
+              leading: const Text('🖼️', style: TextStyle(fontSize: 24)),
+              title: const Text('Escolher do celular'),
+              onTap: () => Navigator.pop(context, 'galeria'),
+            ),
+            ListTile(
+              leading: const Text('🍎', style: TextStyle(fontSize: 24)),
+              title: const Text('Usar ilustração'),
+              onTap: () => Navigator.pop(context, 'ilustracao'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    //fechou o menu sem escolher
+    if (!mounted || opcao == null) return;
+
+    //ilustracao continua usando a galeria de desenhos
+    if (opcao == 'ilustracao') {
+      _abrirGaleria();
+      return;
+    }
+
+    _pegarFoto(opcao == 'camera' ? ImageSource.camera : ImageSource.gallery);
+  }
+
+  //abre a camera ou as fotos e ja diminui a imagem pra caber no banco
+  Future<void> _pegarFoto(ImageSource origem) async {
+    try {
+      final arquivo = await _picker.pickImage(
+        source: origem,
+        maxWidth: 800,
+        imageQuality: 50,
+      );
+
+      //null quando a pessoa desiste
+      if (arquivo == null) return;
+
+      final bytes = await arquivo.readAsBytes();
+      if (!mounted) return;
+
+      //foto real substitui a ilustracao
+      setState(() {
+        _fotoBytes = bytes;
+        _fotos.clear();
+      });
+    } catch (_) {
+      //simulador do iphone e o mac nao tem camera
+      if (!mounted) return;
+      _mostrarMensagem(
+        'Não foi possível abrir a câmera. Tente escolher do celular.',
+      );
+    }
   }
 
   Future<void> _abrirGaleria() async {
@@ -419,10 +542,15 @@ class _PublicarPageState extends State<PublicarPage> {
     );
     if (!mounted || escolhido == null) return;
     if (escolhido.categoria == 'nenhuma') {
-      setState(() => _fotos.clear());
+      setState(() {
+        _fotos.clear();
+        _fotoBytes = null;
+      });
       return;
     }
     setState(() {
+      //ilustracao substitui a foto real
+      _fotoBytes = null;
       // O desenho acompanha o produto selecionado, sem fingir upload de imagem.
       _fotos
         ..clear()
@@ -446,7 +574,7 @@ class _PublicarPageState extends State<PublicarPage> {
 
   Widget _botaoAdicionarFoto() {
     return GestureDetector(
-      onTap: _abrirGaleria,
+      onTap: _escolherOrigem,
       //CustomPaint desenha a borda tracejada, o Flutter não tem pronta
       child: CustomPaint(
         painter: _BordaTracejada(),
