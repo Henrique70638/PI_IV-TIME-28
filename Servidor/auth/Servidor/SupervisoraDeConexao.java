@@ -1,3 +1,5 @@
+//Autora : Laura Lugli Fonseca Pereira RA:25000739
+//no lugar das contas faz a verificacao dos dados de cadastro
 package auth;
 
 import java.io.*;
@@ -5,6 +7,7 @@ import java.net.*;
 import java.util.*;
 
 public class SupervisoraDeConexao extends Thread {
+    //guarda o resultado da ultima verificacao pra devolver quando pedirem
     private boolean valido = false;
     private String mensagem = "Nenhum cadastro foi verificado";
     private Parceiro usuario;
@@ -64,10 +67,12 @@ public class SupervisoraDeConexao extends Thread {
                 if (comunicado == null)
                     return;
                 else if (comunicado instanceof PedidoDeOperacao) {
+                    //chegou um cadastro, confere os dados
                     PedidoDeOperacao pedidoDeOperacao = (PedidoDeOperacao) comunicado;
                     this.verifiqueCadastro(pedidoDeOperacao);
 
                 } else if (comunicado instanceof PedidoDeResultado) {
+                    //devolve o resultado da última verificação
                     this.usuario.receba(new Resultado(this.valido, this.mensagem));
                 } else if (comunicado instanceof PedidoParaSair) {
                     synchronized (this.usuarios) {
@@ -87,7 +92,9 @@ public class SupervisoraDeConexao extends Thread {
         }
     }
 
+    //confere os dados do cadastro, e private porque e só parte do serviço
     private void verifiqueCadastro(PedidoDeOperacao pedido) {
+        //comeca inválido e só vira válido se passar em tudo
         this.valido = false;
 
         String nome = pedido.getNome();
@@ -96,6 +103,7 @@ public class SupervisoraDeConexao extends Thread {
         String perfil = pedido.getPerfil();
         String bairro = pedido.getBairro();
 
+        //null primeiro pra nao dar erro no trim
         if (nome == null || nome.trim().equals("") || nome.trim().length() > 60) {
             this.mensagem = "Informe um nome com ate 60 caracteres";
             return;
@@ -111,6 +119,7 @@ public class SupervisoraDeConexao extends Thread {
             return;
         }
 
+        //so aceita os perfis que existem no banco
         if (perfil == null || !(perfil.equals("ofertante") ||
                 perfil.equals("interessado") ||
                 perfil.equals("ambos"))) {
@@ -123,6 +132,7 @@ public class SupervisoraDeConexao extends Thread {
             return;
         }
 
+        //passou em todas as verificações
         this.valido = true;
         this.mensagem = "Cadastro valido";
     }

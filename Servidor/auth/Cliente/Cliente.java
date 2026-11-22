@@ -1,3 +1,5 @@
+//Autora: Laura Lugli Fonseca Pereira RA:25000739
+//alterado o menu para verificar dados de cadastro
 package auth;
 import java.net.*;
 import java.io.*;
@@ -85,7 +87,8 @@ public class Cliente
 
         char opcao=' ';
         do
-        {
+        {	
+			//opcoes: V manda um cadastro, = pede o resultado, T termina
             System.out.print ("Sua opcao ( [V]erificar cadastro, =, [T]erminar)? ");
 
             try
@@ -106,6 +109,7 @@ public class Cliente
 
 			try
 			{
+				//le os dados do cadastro e manda pro servidor verificar
 				if (opcao=='V'){
 					System.out.print ("Nome? ");
 					String nome = Teclado.getUmString();
@@ -136,6 +140,7 @@ public class Cliente
 					}
 					while (!(comunicado instanceof Resultado));
 					Resultado resultado = (Resultado)servidor.envie ();
+					//o toString do Resultado mostra se é válido e o motivo
 					System.out.println ("Resultado atual: "+resultado+"\n");
 				}
 			}
