@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'detalhe_oferta.dart';
 import '../services/conversas_service.dart';
 
+// uma mensagem na tela do chat; "minha" decide de que lado o balao aparece
 class MensagemChat {
   final String texto;
   final bool minha;
@@ -21,10 +22,14 @@ class MensagemChat {
   });
 }
 
+// tela de conversa entre ofertante e interessado.
+// Com matchId busca e envia as mensagens pela API; sem matchId funciona
+// so com a lista local (usada em exemplos e testes de interface)
 class ChatPage extends StatefulWidget {
   final String nomeOutro;
   final String papelOutro;
   final double? avaliacaoOutro;
+  // id da conversa (match) no banco; nulo quando a tela mostra dados de exemplo
   final String? matchId;
   final ConversasService? api;
   final String emojiAvatar;
@@ -58,6 +63,7 @@ class ChatPage extends StatefulWidget {
   State<ChatPage> createState() => _ChatPageState();
 }
 
+// estado da tela: lista de mensagens, carregamento, envio e rolagem
 class _ChatPageState extends State<ChatPage> {
   static const Color verde = Color(0xFF267536);
   static const Color verdeEscuro = Color(0xFF2E7D32);
@@ -74,8 +80,10 @@ class _ChatPageState extends State<ChatPage> {
   bool _enviando = false;
   bool _permiteEnvio = false;
   String? _erro;
+  // cada carregamento ganha um numero; resposta de um carregamento antigo e descartada
   int _versao = 0;
 
+  // carrega as mensagens da API logo depois de a tela aparecer
   @override
   void initState() {
     super.initState();
@@ -90,6 +98,7 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  // libera os controladores de texto e de rolagem
   @override
   void dispose() {
     _campoController.dispose();
@@ -97,15 +106,18 @@ class _ChatPageState extends State<ChatPage> {
     super.dispose();
   }
 
+  // hora atual no formato H:MM, usada nas mensagens locais
   String _horaAgora() {
     final agora = TimeOfDay.now();
     final minuto = agora.minute.toString().padLeft(2, '0');
     return '${agora.hour}:$minuto';
   }
 
+  // hora de uma mensagem vinda da API no formato HH:MM
   String _horaMensagem(DateTime data) =>
       '${data.hour.toString().padLeft(2, '0')}:${data.minute.toString().padLeft(2, '0')}';
 
+  // rola a lista ate a ultima mensagem depois de o frame ser desenhado
   void _rolarFim() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_rolagemController.hasClients) return;
@@ -117,6 +129,8 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
+  // busca a conversa na API e troca a lista de mensagens; so aceita enviar
+  // mensagem se a conversa ainda estiver com status "conectado"
   Future<void> _carregar() async {
     final id = widget.matchId;
     if (id == null) return;
@@ -151,6 +165,7 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  // envia o texto digitado; ignora texto vazio ou envio em andamento
   Future<void> _enviar() async {
     final texto = _campoController.text.trim();
     if (texto.isEmpty || _enviando || _carregando || !_permiteEnvio) return;
@@ -206,6 +221,7 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  // barra do topo com o botao de voltar, o avatar e o nome de quem esta na conversa
   Widget _cabecalho(BuildContext context) {
     final avaliacao = widget.avaliacaoOutro
         ?.toStringAsFixed(1)
@@ -276,6 +292,7 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  // abre o detalhe da oferta; o botao de interesse fica escondido porque a conexao ja existe
   void _verOferta() {
     if (widget.onVerOferta != null) {
       widget.onVerOferta!();
@@ -297,6 +314,7 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  // cartao da oferta no topo do chat; tocar nele abre o detalhe
   Widget _cartaoOferta() {
     return InkWell(
       onTap: _verOferta,
@@ -305,6 +323,7 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  // visual do cartao: emoji, produto e detalhes da oferta
   Widget _conteudoCartaoOferta() {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -364,6 +383,7 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  // faixa verde com o aviso de que a conexao foi confirmada
   Widget _avisoConexao() {
     return Container(
       width: double.infinity,
@@ -384,6 +404,7 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  // balao de mensagem: minhas a direita, do outro a esquerda
   Widget _balao(MensagemChat mensagem) {
     final minha = mensagem.minha;
     final larguraMaxima = MediaQuery.of(context).size.width * 0.76;
@@ -434,6 +455,7 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  // campo de texto e botao de enviar na parte de baixo
   Widget _campoDeEnvio() {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
@@ -492,6 +514,8 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  // monta a tela: cabecalho e lista (cartao da oferta, aviso e mensagens), com carregando/erro;
+  // o campo de envio some quando a conversa foi encerrada
   @override
   Widget build(BuildContext context) {
     return Scaffold(

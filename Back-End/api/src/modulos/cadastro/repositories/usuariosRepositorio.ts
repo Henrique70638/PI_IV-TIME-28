@@ -9,10 +9,13 @@ import { getBanco } from '../../../shared/banco';
 import { ErroApp } from '../../../shared/erros';
 import { Usuario } from '../types/usuario';
 
+// atalho para a colecao usuarios do banco
 function colecao() {
   return getBanco().collection<Usuario>('usuarios');
 }
 
+// grava o usuario novo; se o e-mail ja existir o indice unico do Mongo
+// dispara o erro 11000, que vira um 409 para o app mostrar a mensagem
 export async function inserirUsuario(usuario: Omit<Usuario, '_id'>): Promise<Usuario> {
   try {
     const { insertedId } = await colecao().insertOne(usuario as Usuario);
@@ -25,6 +28,7 @@ export async function inserirUsuario(usuario: Omit<Usuario, '_id'>): Promise<Usu
   }
 }
 
+// apaga pelo e-mail; usado para limpar usuarios criados em testes
 export async function removerUsuario(email: string): Promise<void> {
   await colecao().deleteOne({ email });
 }

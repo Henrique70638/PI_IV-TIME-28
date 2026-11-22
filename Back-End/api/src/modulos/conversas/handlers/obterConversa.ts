@@ -12,6 +12,8 @@ import { mensagemPublica, participa, resumirConversa } from './formatadores';
 import { lerObjectId } from './validacoes';
 import { usuarioLogado } from '../../../shared/autenticacao';
 
+// abre uma conversa: devolve o resumo, a distancia e as mensagens em ordem;
+// so quem participa do match pode ver
 export async function obterConversa(req: Request, res: Response) {
   // A identidade vem exclusivamente do JWT validado pelo middleware.
   const usuarioId = usuarioLogado(res);

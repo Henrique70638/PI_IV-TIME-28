@@ -10,6 +10,7 @@ import { listarMatchesDoUsuario } from '../repositories/conversasRepositorio';
 import { resumirConversa } from './formatadores';
 import { usuarioLogado } from '../../../shared/autenticacao';
 
+// lista as conversas do usuario, da mais recente para a mais antiga
 export async function listarConversas(_req: Request, res: Response) {
   // A identidade vem exclusivamente do JWT validado pelo middleware.
   const usuarioId = usuarioLogado(res);
