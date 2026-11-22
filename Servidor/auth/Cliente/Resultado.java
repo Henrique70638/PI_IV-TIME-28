@@ -3,21 +3,28 @@ package auth.Cliente;
 
 public class Resultado extends Comunicado
 {
-    private double valorResultante;
+    private boolean valido;
+    private String mensagem;
 
-    public Resultado (double valorResultante)
+    public Resultado (boolean valido, String mensagem)
     {
-        this.valorResultante = valorResultante;
+        this.valido = valido;
+        this.mensagem = mensagem;
     }
 
-    public double getValorResultante ()
+    public boolean isValido ()
     {
-        return this.valorResultante;
+        return this.valido;
     }
     
+    public String getMensagem ()
+    {
+        return this.mensagem;
+    }
+
     public String toString ()
     {
-		return (""+this.valorResultante);
+		return (this.valido ? "valido: " : "invalido: ") + this.mensagem;
 	}
 
 }

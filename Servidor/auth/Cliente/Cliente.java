@@ -86,7 +86,7 @@ public class Cliente
         char opcao=' ';
         do
         {
-            System.out.print ("Sua opcao (+, -, *, /, =, [T]erminar)? ");
+            System.out.print ("Sua opcao ( [V]erificar cadastro, =, [T]erminar)? ");
 
             try
             {
@@ -98,7 +98,7 @@ public class Cliente
 				continue;
 			}
 
-			if ("+-*/=T".indexOf(opcao)==-1)
+			if ("V=T".indexOf(opcao)==-1)
 		    {
 				System.err.println ("Opcao invalida!\n");
 				continue;
@@ -106,29 +106,25 @@ public class Cliente
 
 			try
 			{
-				double valor=0;
-				if ("+-*/".indexOf(opcao)!=-1)
-				{
-					System.out.print ("Valor? ");
-					try
-					{
-						valor = Teclado.getUmDouble();
-						System.out.println();
-						
-						if (opcao=='/' && valor==0)
-						{
-							System.err.println ("Valor invalido!\n");
-							continue;
-						}
-					}
-					catch (Exception erro)
-					{
-						System.err.println ("Valor invalido!\n");
-						continue;
-					}
+				if (opcao=='V'){
+					System.out.print ("Nome? ");
+					String nome = Teclado.getUmString();
 
+					System.out.print ("E-mail? ");
+					String email = Teclado.getUmString();
 
-					servidor.receba (new PedidoDeOperacao (opcao,valor));
+					System.out.print ("Senha? ");
+					String senha = Teclado.getUmString();
+
+					System.out.print ("Perfil? ");
+					String perfil = Teclado.getUmString();
+
+					System.out.print ("Bairro? ");
+					String bairro = Teclado.getUmString();
+
+					System.out.println();
+					servidor.receba(new PedidoDeOperacao (nome, email, senha, perfil, bairro));
+
 				}
 				else if (opcao=='=')
 				{
@@ -140,7 +136,7 @@ public class Cliente
 					}
 					while (!(comunicado instanceof Resultado));
 					Resultado resultado = (Resultado)servidor.envie ();
-					System.out.println ("Resultado atual: "+resultado.getValorResultante()+"\n");
+					System.out.println ("Resultado atual: "+resultado+"\n");
 				}
 			}
 			catch (Exception erro)

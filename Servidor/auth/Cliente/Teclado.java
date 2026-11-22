@@ -1,7 +1,6 @@
 package auth.Cliente;
 
-
-import java.io;
+import java.io.*;
 
 public class Teclado
 {
