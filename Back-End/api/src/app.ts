@@ -9,8 +9,8 @@ export const app = express();
 
 //libera o app acessar a api
 app.use(cors());
-//permite receber json no corpo da requisicao
-app.use(express.json());
+//aumenta o limite pra caber a foto do excedente
+app.use(express.json({ limit: '2mb' }));
 //libera o app acessar a api
 app.use(cors());
 //permite receber json no corpo da requisicao

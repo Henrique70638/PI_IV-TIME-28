@@ -44,10 +44,12 @@ export async function publicarExcedente(req: Request, res: Response, next: NextF
         let fotos: string[] | undefined;
         if (dados.fotos !== undefined) {
             if (!Array.isArray(dados.fotos) || dados.fotos.length > 3 ||
-                !dados.fotos.every((foto: unknown) => typeof foto === 'string'))
+                //cada foto tem que ser uma imagem em texto (data:image/...)
+                !dados.fotos.every((foto: unknown) => typeof foto === 'string' && foto.startsWith('data:image/')))
                 throw new ErroApp(400, 'Envie no máximo 3 fotos');
             fotos = dados.fotos;
         }
+
 
         const agora = new Date();
 
@@ -75,6 +77,7 @@ export async function publicarExcedente(req: Request, res: Response, next: NextF
             status: 'disponivel',
             criadoEm: agora,
             atualizadoEm: agora,
+
         };
 
         //só coloca os opcionais se vieram
