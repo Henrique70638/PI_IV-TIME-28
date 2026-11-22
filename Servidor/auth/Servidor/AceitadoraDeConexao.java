@@ -1,4 +1,4 @@
-package auth.Servidor;
+package auth;
 
 import java.net.*;
 import java.util.*;

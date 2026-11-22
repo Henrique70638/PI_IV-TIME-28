@@ -1,5 +1,5 @@
 //autor: Emilly Morelatto
-package auth.Servidor;
+package auth;
 
 public class PedidoDeOperacao extends Comunicado
 {

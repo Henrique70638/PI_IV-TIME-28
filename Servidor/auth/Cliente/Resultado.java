@@ -1,4 +1,4 @@
-package auth.Cliente;
+package auth;
 
 
 public class Resultado extends Comunicado

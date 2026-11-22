@@ -1,4 +1,4 @@
-package auth.Cliente;
+package auth;
 public class PedidoDeOperacao extends Comunicado
 {
     private String nome;

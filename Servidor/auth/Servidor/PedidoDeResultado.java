@@ -1,4 +1,4 @@
-package auth.Servidor;
+package auth;
 
 public class PedidoDeResultado extends Comunicado
 {}
