@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 // precisa importar o login pra conseguir mandar o usuário pra lá pelo link "Entrar"
 import 'login.dart';
 
+import '../services/cadastro_service.dart';
+
 // cores da identidade visual do CULT+
 // 0xFF diz que a cor é 100% opaca
 const corVerde = Color(0xFF2E7D32);
@@ -39,6 +41,9 @@ class _CadastroPageState extends State<CadastroPage> {
   //perfil marcado, começa em interessado
   TipoPerfil _perfil = TipoPerfil.interessado;
 
+  //fica true enquanto espera a api responder
+  bool _enviando = false;
+
   //usada para validar todos os campos de uma vez
   final _formKey = GlobalKey<FormState>();
 
@@ -52,14 +57,41 @@ class _CadastroPageState extends State<CadastroPage> {
     super.dispose();
   }
 
-  void _criarConta() {
+  Future<void> _criarConta() async {
     //se algum campo der erro para aqui
     if (!_formKey.currentState!.validate()) return;
 
-    //depois aqui entra o cadastro no banco
-    ScaffoldMessenger.of(
+    //trava o botao enquanto envia
+    setState(() => _enviando = true);
+
+    //os nomes sao os mesmos que o backend espera
+    final erro = await CadastroService.cadastrar({
+      'nome': _nomeController.text.trim(),
+      'email': _emailController.text.trim(),
+      'senha': _senhaController.text,
+      'bairro': _localController.text.trim(),
+      'perfil': _perfil.name,
+    });
+
+    //a tela pode ter sido fechada enquanto esperava
+    if (!mounted) return;
+    setState(() => _enviando = false);
+
+    //se voltou mensagem e porque deu erro, mostra o motivo
+    if (erro != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(erro)));
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Conta criada! Faça login para entrar.')),
+    );
+
+    //manda pro login igual o link entrar, pra nao voltar pro cadastro depois
+    Navigator.pushReplacement(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Conta criada!')));
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+    );
   }
 
   @override
@@ -111,8 +143,9 @@ class _CadastroPageState extends State<CadastroPage> {
                     onPressed: () =>
                         setState(() => _senhaOculta = !_senhaOculta),
                   ),
-                  validador: (v) => (v == null || v.length < 6)
-                      ? 'Mínimo de 6 caracteres'
+                  //o servidor pede de 8 a 72 caracteres
+                  validador: (v) => (v == null || v.length < 8)
+                      ? 'Mínimo de 8 caracteres'
                       : null,
                 ),
                 _rotulo('Localização'),
@@ -301,7 +334,7 @@ class _CadastroPageState extends State<CadastroPage> {
   ) {
     final selecionado = _perfil == tipo;
 
-    //ao tocar troca o perfil escolhido 
+    //ao tocar troca o perfil escolhido
     return GestureDetector(
       onTap: () => setState(() => _perfil = tipo),
       //stack pra colocar a bolinha do check encima do cartão
@@ -368,20 +401,32 @@ class _CadastroPageState extends State<CadastroPage> {
     return SizedBox(
       height: 58,
       child: ElevatedButton(
-        onPressed: _criarConta,
+        //desliga o botao enquanto envia pra nao criar duas contas
+        onPressed: _enviando ? null : _criarConta,
         style: ElevatedButton.styleFrom(
           backgroundColor: corLaranja,
           foregroundColor: Colors.white,
           elevation: 6,
           shadowColor: const Color(0x66EF6C00),
+          disabledBackgroundColor: corLaranja,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
         ),
-        child: const Text(
-          'Criar conta',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-        ),
+        //mostra uma rodinha girando enquanto espera a api
+        child: _enviando
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 3,
+                ),
+              )
+            : const Text(
+                'Criar conta',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
       ),
     );
   }
