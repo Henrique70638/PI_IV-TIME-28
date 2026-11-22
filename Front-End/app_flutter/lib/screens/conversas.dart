@@ -1,11 +1,16 @@
 /*
- * Autor: Henrique Leite de Camargo
- * RA: 25005997
+ * Autores:
+ * Henrique Leite de Camargo - RA: 25005997
+ * Rafaela Jacobsen Braga - RA: 25004280
  * Data: 18/11/2026
  */
 import 'package:flutter/material.dart';
 
 import 'chat.dart';
+import 'inicio.dart';
+import 'perfil.dart';
+import 'publicar.dart';
+import '../services/sessao.dart';
 
 class ConversaItem {
   final String nome;
@@ -140,10 +145,115 @@ class ConversasPage extends StatelessWidget {
     );
   }
 
+  // Mantém o menu inferior entre as telas sem modificar a conversa aberta.
+  void _navegar(BuildContext context, Widget pagina) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => pagina),
+    );
+  }
+
+  Widget _itemNavegacao({
+    required IconData icone,
+    required String texto,
+    required bool selecionado,
+    required VoidCallback aoTocar,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: aoTocar,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icone, size: 28, color: selecionado ? verde : Colors.grey),
+              const SizedBox(height: 5),
+              Text(
+                texto,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: selecionado ? FontWeight.bold : FontWeight.normal,
+                  color: selecionado ? verde : Colors.grey,
+                ),
+              ),
+              if (selecionado)
+                Container(
+                  margin: const EdgeInsets.only(top: 5),
+                  width: 28,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: verde,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _barraInferior(BuildContext context) {
+    final dados = Sessao.usuario;
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFE7EAE4))),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          child: Row(
+            children: [
+              _itemNavegacao(
+                icone: Icons.home_outlined,
+                texto: 'Início',
+                selecionado: false,
+                aoTocar: () => _navegar(context, const InicioPage()),
+              ),
+              _itemNavegacao(
+                icone: Icons.add,
+                texto: 'Publicar',
+                selecionado: false,
+                aoTocar: () => _navegar(context, const PublicarPage()),
+              ),
+              _itemNavegacao(
+                icone: Icons.chat_bubble_outline,
+                texto: 'Conversas',
+                selecionado: true,
+                aoTocar: () {},
+              ),
+              _itemNavegacao(
+                icone: Icons.person,
+                texto: 'Perfil',
+                selecionado: false,
+                aoTocar: () => _navegar(
+                  context,
+                  PerfilPage(
+                    usuario: UsuarioPerfil(
+                      nome: (dados?['nome'] ?? 'Usuário').toString(),
+                      email: (dados?['email'] ?? '').toString(),
+                      tipoUsuario: (dados?['perfil'] ?? 'Interessado').toString(),
+                      localizacao: (dados?['bairro'] ?? dados?['cidade'] ?? '')
+                          .toString(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: fundo,
+      bottomNavigationBar: _barraInferior(context),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
