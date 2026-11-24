@@ -1,85 +1,86 @@
 # Banco de dados — CULT+ (PI IV, Time 28)
 
-Banco de dados do CULT+, plataforma que conecta pessoas com excedentes de produtos cultivados em casa a pessoas interessadas em comprá-los ou recebê-los. O modelo cobre as funcionalidades do **MVP** definidas no relatório de ideação e usa **Cloud Firestore** (Firebase), conforme a stack proposta na seção 3.2.3 do relatório.
+Banco de dados do CULT+, plataforma que conecta pessoas com excedentes de produtos cultivados em casa a pessoas interessadas em comprá-los ou recebê-los. O modelo cobre as funcionalidades do **MVP** definidas no relatório de ideação e usa **MongoDB** (hospedado no **MongoDB Atlas**), conforme o Plano de Ensino do PI IV.
+
+Autor: Henrique Leite de Camargo (RA 25005997).
 
 ## Conteúdo
 
 | Caminho | O que é |
 |---|---|
-| `docs/01-requisitos-de-dados.md` | Funcionalidades do MVP, dados necessários, indicadores e premissas |
+| `docs/01-requisitos-de-dados.md` | Requisitos da disciplina, funcionalidades do MVP, dados necessários, indicadores e premissas |
 | `docs/02-modelo-conceitual.md` | Modelo conceitual (DER), entidades, relacionamentos e regras de negócio |
-| `docs/03-modelo-firestore.md` | Estrutura das coleções, exemplos, decisões de modelagem, segurança e índices |
+| `docs/03-modelo-mongodb.md` | Coleções, decisões de modelagem (embutir ou referenciar), exemplos, índices e segurança |
 | `docs/04-dicionario-de-dados.md` | Dicionário de dados (gerado a partir de `scripts/schema.js`) |
-| `docs/05-consultas-mvp.md` | Consultas principais do MVP |
+| `docs/05-consultas-e-desempenho.md` | Consultas do MVP, uso no servidor Java e medição de desempenho |
+| `docs/06-atlas-passo-a-passo.md` | Como criar o cluster no Atlas, conectar com Compass e mongosh e reunir evidências |
 | `docs/diagramas/` | DER em PNG e o código-fonte (`.dot`) |
-| `firestore/firestore.rules` | Regras de segurança |
-| `firestore/firestore.indexes.json` | Índices compostos |
-| `firebase.json` | Configuração do Firebase CLI e do emulador |
-| `scripts/` | Esquema, dados de exemplo, validação, carga (seed), métricas e testes das regras |
+| `mongo/` | Scripts do `mongosh`: coleções com validação, índices, dados de exemplo, consultas, fluxo do MVP, desempenho e métricas |
+| `scripts/` | Esquema (fonte única), geradores, validação e testes locais (Node.js, sem dependências) |
 
-## Como executar (Windows, PowerShell)
+## Como criar o banco no Atlas
 
-Pré-requisitos: Node.js 18 ou superior, Java 21 ou superior (exigido pelo emulador) e o Firebase CLI (`npm install -g firebase-tools`).
+Resumo (o passo a passo completo está em `docs/06-atlas-passo-a-passo.md`):
 
-1. Instalar as dependências e rodar os testes locais:
-
-   ```
-   cd database/scripts
-   npm install
-   npm test
-   ```
-
-2. Em outro terminal, iniciar o emulador do Firestore (a partir da pasta `database`):
+1. Crie o cluster M0 no Atlas, um usuário administrativo do banco (`readWrite` e `dbAdmin` em `cultmais`) e libere o seu IP.
+2. Instale o `mongosh` e, na pasta `database\mongo`, execute com a sua string de conexão:
 
    ```
-   firebase emulators:start --only firestore --project cult-mais-dev
+   mongosh "mongodb+srv://USUARIO:SENHA@NOME-DO-CLUSTER.mongodb.net/cultmais" --file 00-executar-tudo.js
    ```
 
-   O painel do emulador abre em http://localhost:4000.
+3. Confira as coleções, os índices e a validação no MongoDB Compass.
 
-3. Gravar os dados de exemplo no emulador e consultar as métricas:
+Nunca coloque a string de conexão no repositório.
 
-   ```
-   npm run seed
-   npm run metricas
-   ```
+## Testes locais (sem Atlas)
 
-4. Testar as regras de segurança (com o emulador ligado). Os testes apagam os dados do emulador; rode `npm run seed` depois para recarregá-los:
-
-   ```
-   node --test regras.test.js
-   ```
-
-5. Regerar o dicionário de dados depois de alterar `scripts/schema.js`:
-
-   ```
-   npm run dicionario
-   ```
-
-Os scripts gravam no **emulador** por padrão. Para usar um projeto Firebase real, defina a variável `GOOGLE_APPLICATION_CREDENTIALS` com o caminho da chave de serviço e use `npm run seed:real` ou `npm run metricas:real`. Nunca versione a chave de serviço (o `.gitignore` já a ignora).
-
-Publicar regras e índices em um projeto real:
+Pré-requisito: Node.js 18 ou superior. Não há dependências para instalar.
 
 ```
-firebase login
-firebase use <id-do-projeto>
-firebase deploy --only firestore:rules,firestore:indexes
+cd database\scripts
+npm test
 ```
+
+O `npm test` executa três verificações:
+
+- `geo.test.js`: cálculo de distância.
+- `validar-dados.js`: dados de exemplo contra o esquema e consistência entre coleções (referências, nomes copiados, última mensagem, unicidade).
+- `testar-mongo.js`: executa os scripts do `mongosh` contra um banco simulado, duas vezes seguidas, e confere validadores, índices, unicidade e rejeição de dados inválidos.
+
+## Alterar o modelo
+
+O esquema fica em `scripts/schema.js`. Depois de alterá-lo:
+
+```
+cd database\scripts
+npm run gerar
+npm test
+```
+
+O `gerar` reescreve `mongo/01-colecoes.js`, `mongo/02-indices.js`, `mongo/03-dados-exemplo.js` e `docs/04-dicionario-de-dados.md`. Esses arquivos são gerados; não os edite à mão.
 
 ## O que foi verificado e o que falta
 
-Verificado:
+Verificado (`npm test`):
 
-- Cálculo de geohash e de distância, contra valores de referência (`npm test`).
-- Dados de exemplo contra o esquema: tipos, campos obrigatórios, valores permitidos, referências entre coleções e coerência das cópias desnormalizadas (`npm test`).
-- Carga dos dados (`npm run seed`, 25 documentos) e cálculo das métricas (`npm run metricas`) no emulador do Firestore.
-- Regras de segurança: 35 testes automatizados no emulador (`node --test regras.test.js`), cobrindo leitura e escrita de usuários, ofertas, matches e mensagens, e o bloqueio de coleções não previstas.
+- Dados de exemplo contra o esquema e consistência entre coleções.
+- Scripts de criação executados duas vezes em um banco simulado, sem erro e sem colisão de nomes entre arquivos.
+- Validadores gerados idênticos ao esquema; índices criados conforme o esquema; rejeição de dados inválidos e de duplicidade.
+- Sintaxe dos demais scripts do `mongosh`.
+
+Verificado no Atlas (cluster M0, MongoDB 8.0.36, AWS São Paulo, em 03/11/2026):
+
+- Criação das coleções com validação, dos índices e dos dados de exemplo (`00-executar-tudo.js`).
+- Consultas do MVP (`04-consultas-mvp.js`), com os resultados esperados e sem expor dados privados.
+- Fluxo do MVP com escrita, bloqueio de duplicidade e de dados inválidos, e limpeza (`05-fluxo-mvp.js`).
+- Desempenho com 20.000 ofertas sintéticas, com e sem índice (`06-desempenho.js`); resultados em `docs/05-consultas-e-desempenho.md`.
+- Indicadores do MVP (`07-metricas.js`): 7 excedentes, 2 matches, 1 negociação concluída (50%) e distância média de 1,6 km.
 
 Ainda não verificado:
 
-- Publicação das regras e dos índices em um projeto Firebase real (`firebase deploy`).
-- Consultas do documento `docs/05-consultas-mvp.md` em um aplicativo. Os índices compostos só são exigidos pelo Firestore de produção, então a busca por proximidade deve ser testada lá.
+- Os trechos em Java de `docs/05-consultas-e-desempenho.md`.
 
 ## Dados de exemplo
 
-Os usuários, ofertas, matches e mensagens em `scripts/dados-exemplo.js` são **fictícios** e reproduzem a jornada mostrada nas telas do protótipo (ex.: Manga Tommy, Roberto C.).
+Os usuários, ofertas, matches e mensagens em `mongo/03-dados-exemplo.js` são **fictícios** e reproduzem a jornada das telas do protótipo (ex.: Manga Tommy, Roberto C.). Os e-mails usam o domínio reservado `example.com`, e o `senhaHash` de exemplo não corresponde a nenhuma senha.

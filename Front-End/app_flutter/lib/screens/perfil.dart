@@ -1,8 +1,11 @@
-//Autor:Emilly Morelatto
+// Autores: Emilly Morelatto
+// Rafaela Jacobsen Braga - RA: 25004280
 import 'package:flutter/material.dart';
 import 'inicio.dart';
 import 'publicar.dart';
 import 'conversas.dart';
+import 'editar_perfil.dart';
+import '../services/sessao.dart';
 
 class UsuarioPerfil {
   final String nome;
@@ -53,51 +56,80 @@ class PerfilPage extends StatelessWidget {
         tipoFormatado.toLowerCase() == 'ambos';
   }
 
+  Future<void> _abrirEdicao(
+    BuildContext context, {
+    bool localizacao = false,
+  }) async {
+    final alterou = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => EditarPerfilPage(editarLocalizacao: localizacao),
+      ),
+    );
+    if (alterou != true || !context.mounted) return;
+    final dados = Sessao.usuario ?? {};
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => PerfilPage(
+          usuario: UsuarioPerfil(
+            nome: dados['nome']?.toString() ?? usuario.nome,
+            email: dados['email']?.toString() ?? usuario.email,
+            tipoUsuario: dados['perfil']?.toString() ?? usuario.tipoUsuario,
+            localizacao: dados['bairro']?.toString() ?? usuario.localizacao,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget linhaInformacao({
+    VoidCallback? aoTocar,
     required IconData icone,
     required String titulo,
     required String valor,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 18),
-      child: Row(
-        children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE4EFDF),
-              borderRadius: BorderRadius.circular(30),
+    return InkWell(
+      onTap: aoTocar,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        child: Row(
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE4EFDF),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Icon(icone, color: verde, size: 29),
             ),
-            child: Icon(icone, color: verde, size: 29),
-          ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  titulo,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF183D36),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titulo,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF183D36),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 7),
-                Text(
-                  valor.isEmpty ? 'Não informado' : valor,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF829398),
+                  const SizedBox(height: 7),
+                  Text(
+                    valor.isEmpty ? 'Não informado' : valor,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Color(0xFF829398),
+                    ),
+                    softWrap: true,
                   ),
-                  softWrap: true,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const Icon(Icons.chevron_right, color: Color(0xFF7F8B8B), size: 28),
-        ],
+            const Icon(Icons.chevron_right, color: Color(0xFF7F8B8B), size: 28),
+          ],
+        ),
       ),
     );
   }
@@ -169,7 +201,8 @@ class PerfilPage extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          onPressed: () {},
+                          onPressed: () => _abrirEdicao(context),
+                          tooltip: 'Editar configurações da conta',
                           icon: const Icon(
                             Icons.settings_outlined,
                             color: verde,
@@ -343,24 +376,29 @@ class PerfilPage extends StatelessWidget {
                           linhaInformacao(
                             icone: Icons.person_outline,
                             titulo: 'Nome',
+                            aoTocar: () => _abrirEdicao(context),
                             valor: usuario.nome,
                           ),
                           const Divider(height: 1, color: Color(0xFFEDF0EB)),
                           linhaInformacao(
                             icone: Icons.mail_outline,
                             titulo: 'E-mail',
+                            aoTocar: () => _abrirEdicao(context),
                             valor: usuario.email,
                           ),
                           const Divider(height: 1, color: Color(0xFFEDF0EB)),
                           linhaInformacao(
                             icone: Icons.people_outline,
                             titulo: 'Tipo de usuário',
+                            aoTocar: () => _abrirEdicao(context),
                             valor: tipoFormatado,
                           ),
                           const Divider(height: 1, color: Color(0xFFEDF0EB)),
                           linhaInformacao(
                             icone: Icons.location_on_outlined,
                             titulo: 'Localização',
+                            aoTocar: () =>
+                                _abrirEdicao(context, localizacao: true),
                             valor: usuario.localizacao,
                           ),
                         ],

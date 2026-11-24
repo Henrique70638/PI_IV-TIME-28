@@ -4,33 +4,44 @@
  * Data: 03/11/2026
  */
 
-const { geohash, distanciaKm } = require('./geo');
+const { distanciaKm } = require('./geo');
 
+const oid = (prefixo, n) => ({ $oid: prefixo + String(n).padStart(22, '0') });
+const data = (dia, hora, min = 0) => ({ $date: `2026-10-${String(dia).padStart(2, '0')}T${String(hora).padStart(2, '0')}:${String(min).padStart(2, '0')}:00.000Z` });
+const ponto = (lat, lng) => ({ type: 'Point', coordinates: [lng, lat] });
 const arredonda = (n, casas) => Number(n.toFixed(casas));
-const geoPrivado = (lat, lng) => ({ geo: { lat, lng }, geohash: geohash(lat, lng) });
-const geoAproximada = (lat, lng) => ({ lat: arredonda(lat, 3), lng: arredonda(lng, 3) });
-const iso = (dia, hora, min = 0) => `2026-10-${dia}T${String(hora).padStart(2, '0')}:${String(min).padStart(2, '0')}:00Z`;
+const pontoAproximado = (lat, lng) => ponto(arredonda(lat, 3), arredonda(lng, 3));
+const idDe = (documento) => documento._id.$oid;
+const latLngDe = (p) => ({ lat: p.coordinates[1], lng: p.coordinates[0] });
+
+const SENHA_HASH_EXEMPLO = '$2a$10$' + 'x'.repeat(53);
+
+const usuario = (n, nome, email, perfil, bairro, lat, lng, dia, hora) => ({
+  _id: oid('a1', n),
+  nome,
+  email,
+  senhaHash: SENHA_HASH_EXEMPLO,
+  perfil,
+  bairro,
+  cidade: 'Campinas',
+  localizacao: ponto(lat, lng),
+  criadoEm: data(dia, hora),
+});
 
 const usuarios = [
-  { id: 'u_roberto', nome: 'Roberto C.', perfil: 'ofertante', bairro: 'Jardim das Flores', cidade: 'Campinas', lat: -22.9208, lng: -47.0651, criadoEm: iso(20, 14) },
-  { id: 'u_marina', nome: 'Marina S.', perfil: 'interessado', bairro: 'Jardim das Flores', cidade: 'Campinas', lat: -22.91, lng: -47.065, criadoEm: iso(21, 13) },
-  { id: 'u_carla', nome: 'Carla M.', perfil: 'ambos', bairro: 'Vila Esperança', cidade: 'Campinas', lat: -22.903, lng: -47.058, criadoEm: iso(22, 15) },
-  { id: 'u_joao', nome: 'João P.', perfil: 'ofertante', bairro: 'Parque Verde', cidade: 'Campinas', lat: -22.888, lng: -47.065, criadoEm: iso(22, 16) },
-].map((u) => ({
-  id: u.id,
-  publico: { nome: u.nome, perfil: u.perfil, bairro: u.bairro, cidade: u.cidade, criadoEm: u.criadoEm },
-  privado: { localizacao: geoPrivado(u.lat, u.lng), atualizadoEm: u.criadoEm },
-}));
+  usuario(1, 'Roberto C.', 'roberto@example.com', 'ofertante', 'Jardim das Flores', -22.9208, -47.0651, 20, 14),
+  usuario(2, 'Marina S.', 'marina@example.com', 'interessado', 'Jardim das Flores', -22.91, -47.065, 21, 13),
+  usuario(3, 'Carla M.', 'carla@example.com', 'ambos', 'Vila Esperança', -22.903, -47.058, 22, 15),
+  usuario(4, 'João P.', 'joao@example.com', 'ofertante', 'Parque Verde', -22.888, -47.065, 22, 16),
+];
 
-const nomeDe = (uid) => usuarios.find((u) => u.id === uid).publico.nome;
-const geoDe = (uid) => usuarios.find((u) => u.id === uid).privado.localizacao.geo;
+const usuarioPorId = (idHex) => usuarios.find((u) => idDe(u) === idHex);
 
-const excedente = (id, ofertanteId, produto, descricao, categoria, quantidade, unidade, urgencia, modalidade, bairro, lat, lng, status, criadoEm) => {
-  const geo = geoAproximada(lat, lng);
+const excedente = (n, ofertanteN, produto, descricao, categoria, quantidade, unidade, urgencia, modalidade, bairro, lat, lng, status, criadoEm) => {
+  const dono = usuarios[ofertanteN - 1];
   return {
-    id,
-    ofertanteId,
-    ofertanteNome: nomeDe(ofertanteId),
+    _id: oid('b2', n),
+    ofertante: { _id: dono._id, nome: dono.nome },
     produto,
     descricao,
     categoria,
@@ -38,8 +49,8 @@ const excedente = (id, ofertanteId, produto, descricao, categoria, quantidade, u
     unidade,
     urgencia,
     modalidade,
-    localizacao: { bairro, cidade: 'Campinas', geoAproximada: geo, geohash: geohash(geo.lat, geo.lng) },
-    fotos: [`excedentes/${id}/1.jpg`],
+    localizacao: { bairro, cidade: 'Campinas', ponto: pontoAproximado(lat, lng) },
+    fotos: [`excedentes/${n}/1.jpg`],
     status,
     criadoEm,
     atualizadoEm: criadoEm,
@@ -47,59 +58,69 @@ const excedente = (id, ofertanteId, produto, descricao, categoria, quantidade, u
 };
 
 const excedentes = [
-  excedente('exc_manga_tommy', 'u_roberto', 'Manga Tommy', 'Mangas colhidas hoje, quintal com sombra parcial. Ideal para consumo imediato ou doces caseiros.', 'frutas', 5, 'kg', 'alguns_dias', 'doacao', 'Jardim das Flores', -22.9208, -47.065, 'disponivel', iso(29, 11)),
-  excedente('exc_limao_taiti', 'u_joao', 'Limão Taiti', 'Limões do pé do quintal, sem agrotóxicos.', 'frutas', 3, 'kg', 'alguns_dias', 'doacao', 'Parque Verde', -22.888, -47.065, 'disponivel', iso(28, 10)),
-  excedente('exc_banana_prata', 'u_carla', 'Banana prata', 'Dois cachos maduros.', 'frutas', 2, 'cacho', 'hoje', 'venda', 'Vila Esperança', -22.91, -47.036, 'disponivel', iso(28, 17)),
-  excedente('exc_laranja_pera', 'u_joao', 'Laranja pera', 'Laranjas doces, boas para suco.', 'frutas', 8, 'kg', 'alguns_dias', 'venda', 'Parque Verde', -22.944, -47.065, 'disponivel', iso(27, 12)),
-  excedente('exc_maca', 'u_carla', 'Maçã', 'Maçãs de uma árvore pequena.', 'frutas', 4, 'kg', 'sem_pressa', 'doacao', 'Vila Esperança', -22.91, -47.107, 'disponivel', iso(27, 18)),
-  excedente('exc_alface_crespa', 'u_roberto', 'Alface crespa', 'Horta de casa, colhida na hora.', 'verduras', 12, 'maco', 'hoje', 'doacao', 'Jardim das Flores', -22.919, -47.067, 'concluido', iso(26, 9)),
-  excedente('exc_mudas_manjericao', 'u_carla', 'Mudas de manjericão', 'Mudas prontas para replantio.', 'mudas', 8, 'muda', 'sem_pressa', 'doacao', 'Vila Esperança', -22.903, -47.058, 'disponivel', iso(25, 16)),
+  excedente(1, 1, 'Manga Tommy', 'Mangas colhidas hoje, quintal com sombra parcial. Ideal para consumo imediato ou doces caseiros.', 'frutas', 5, 'kg', 'alguns_dias', 'doacao', 'Jardim das Flores', -22.9208, -47.065, 'disponivel', data(29, 11)),
+  excedente(2, 4, 'Limão Taiti', 'Limões do pé do quintal, sem agrotóxicos.', 'frutas', 3, 'kg', 'alguns_dias', 'doacao', 'Parque Verde', -22.888, -47.065, 'disponivel', data(28, 10)),
+  excedente(3, 3, 'Banana prata', 'Dois cachos maduros.', 'frutas', 2, 'cacho', 'hoje', 'venda', 'Vila Esperança', -22.91, -47.036, 'disponivel', data(28, 17)),
+  excedente(4, 4, 'Laranja pera', 'Laranjas doces, boas para suco.', 'frutas', 8, 'kg', 'alguns_dias', 'venda', 'Parque Verde', -22.944, -47.065, 'disponivel', data(27, 12)),
+  excedente(5, 3, 'Maçã', 'Maçãs de uma árvore pequena.', 'frutas', 4, 'kg', 'sem_pressa', 'doacao', 'Vila Esperança', -22.91, -47.107, 'disponivel', data(27, 18)),
+  excedente(6, 1, 'Alface crespa', 'Horta de casa, colhida na hora.', 'verduras', 12, 'maco', 'hoje', 'doacao', 'Jardim das Flores', -22.919, -47.067, 'concluido', data(26, 9)),
+  excedente(7, 3, 'Mudas de manjericão', 'Mudas prontas para replantio.', 'mudas', 8, 'muda', 'sem_pressa', 'doacao', 'Vila Esperança', -22.903, -47.058, 'disponivel', data(25, 16)),
 ];
 
-const excedenteDe = (id) => excedentes.find((e) => e.id === id);
+const excedentePorId = (idHex) => excedentes.find((e) => idDe(e) === idHex);
 
-const match = (excedenteId, interessadoId, status, criadoEm, mensagens, concluidoEm) => {
-  const ex = excedenteDe(excedenteId);
-  const g = geoDe(interessadoId);
-  const msgs = mensagens.map((m, i) => ({ id: `msg_${String(i + 1).padStart(3, '0')}`, autorId: m[0], texto: m[1], criadoEm: m[2] }));
-  const ultima = msgs[msgs.length - 1];
+const match = (n, excedenteN, interessadoN, status, criadoEm, concluidoEm) => {
+  const ex = excedentes[excedenteN - 1];
+  const interessado = usuarios[interessadoN - 1];
+  const a = latLngDe(interessado.localizacao);
+  const b = latLngDe(ex.localizacao.ponto);
   const doc = {
-    id: `${excedenteId}_${interessadoId}`,
-    excedenteId,
-    ofertanteId: ex.ofertanteId,
-    interessadoId,
-    ofertanteNome: ex.ofertanteNome,
-    interessadoNome: nomeDe(interessadoId),
-    participantes: [ex.ofertanteId, interessadoId],
+    _id: oid('c3', n),
+    excedenteId: ex._id,
+    ofertanteId: ex.ofertante._id,
+    interessadoId: interessado._id,
+    ofertanteNome: ex.ofertante.nome,
+    interessadoNome: interessado.nome,
+    participantes: [ex.ofertante._id, interessado._id],
     status,
-    criterios: {
-      localizacao: true,
-      categoria: true,
-      distanciaKm: arredonda(distanciaKm(g.lat, g.lng, ex.localizacao.geoAproximada.lat, ex.localizacao.geoAproximada.lng), 1),
-    },
+    criterios: { localizacao: true, categoria: true, distanciaKm: arredonda(distanciaKm(a.lat, a.lng, b.lat, b.lng), 1) },
     excedenteResumo: { produto: ex.produto, categoria: ex.categoria, modalidade: ex.modalidade, quantidade: ex.quantidade, unidade: ex.unidade },
-    ultimaMensagem: { texto: ultima.texto, autorId: ultima.autorId, criadoEm: ultima.criadoEm },
     criadoEm,
-    atualizadoEm: concluidoEm || ultima.criadoEm,
-    mensagens: msgs,
+    atualizadoEm: criadoEm,
   };
   if (concluidoEm) doc.concluidoEm = concluidoEm;
   return doc;
 };
 
 const matches = [
-  match('exc_manga_tommy', 'u_marina', 'conectado', iso(29, 12, 37), [
-    ['u_marina', 'Oi, Roberto! Tenho interesse nas mangas 😊', iso(29, 12, 38)],
-    ['u_roberto', 'Oi! Que bom! Colhi hoje cedo, ainda tem bastante.', iso(29, 12, 39)],
-    ['u_marina', 'Posso retirar amanhã às 9h, aí na sua casa?', iso(29, 12, 40)],
-    ['u_roberto', 'Pode sim! Te envio o endereço certinho por aqui.', iso(29, 12, 41)],
-    ['u_marina', 'Combinado, obrigado! 🙌', iso(29, 12, 41)],
-  ]),
-  match('exc_alface_crespa', 'u_carla', 'concluido', iso(26, 11), [
-    ['u_carla', 'Olá! Posso buscar as alfaces hoje à tarde?', iso(26, 11, 5)],
-    ['u_roberto', 'Pode sim, estou em casa até as 18h.', iso(26, 11, 8)],
-    ['u_carla', 'Retirei, muito obrigada!', iso(26, 20)],
-  ], iso(26, 20, 10)),
+  match(1, 1, 2, 'conectado', data(29, 12, 37)),
+  match(2, 6, 3, 'concluido', data(26, 11), data(26, 20, 10)),
 ];
 
-module.exports = { usuarios, excedentes, matches };
+const mensagem = (n, matchN, autorN, texto, criadoEm) => ({
+  _id: oid('d4', n),
+  matchId: matches[matchN - 1]._id,
+  autorId: usuarios[autorN - 1]._id,
+  texto,
+  criadoEm,
+});
+
+const mensagens = [
+  mensagem(1, 1, 2, 'Oi, Roberto! Tenho interesse nas mangas 😊', data(29, 12, 38)),
+  mensagem(2, 1, 1, 'Oi! Que bom! Colhi hoje cedo, ainda tem bastante.', data(29, 12, 39)),
+  mensagem(3, 1, 2, 'Posso retirar amanhã às 9h, aí na sua casa?', data(29, 12, 40)),
+  mensagem(4, 1, 1, 'Pode sim! Te envio o endereço certinho por aqui.', data(29, 12, 41)),
+  mensagem(5, 1, 2, 'Combinado, obrigado! 🙌', data(29, 12, 41)),
+  mensagem(6, 2, 3, 'Olá! Posso buscar as alfaces hoje à tarde?', data(26, 11, 5)),
+  mensagem(7, 2, 1, 'Pode sim, estou em casa até as 18h.', data(26, 11, 8)),
+  mensagem(8, 2, 3, 'Retirei, muito obrigada!', data(26, 20)),
+];
+
+for (const m of matches) {
+  const ultimas = mensagens.filter((x) => x.matchId.$oid === m._id.$oid);
+  const ultima = ultimas[ultimas.length - 1];
+  m.ultimaMensagem = { texto: ultima.texto, autorId: ultima.autorId, criadoEm: ultima.criadoEm };
+  m.atualizadoEm = m.concluidoEm || ultima.criadoEm;
+}
+
+module.exports = { usuarios, excedentes, matches, mensagens, usuarioPorId, excedentePorId, idDe };
